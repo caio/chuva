@@ -35,3 +35,8 @@ function setError(msg) {
     }
 }
 
+window.onload = (event) => {
+    if (!!navigator.geolocation) {
+        document.getElementById("button").disabled = false;
+    }
+}
