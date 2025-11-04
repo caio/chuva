@@ -1,0 +1,13 @@
+[package]
+name = "chuva"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dataset = { version = "0.1.0", default-features = false, features = ["load"], path = "../dataset" }
+caveman = { version = "0.1.0", default-features = false, path = "../caveman" }
+
+fst = "0.4.7"
+jiff = { version = "0.2.15", default-features = false, features = ["perf-inline", "std", "tz-fat", "tzdb-zoneinfo"] }
+askama = { version = "0.14.0", default-features = false, features = ["blocks", "derive", "std"] }
+tokio = { version = "1.47.1", default-features = false, features = ["net", "rt"] }

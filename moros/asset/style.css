@@ -1,0 +1,35 @@
+:root {
+    color-scheme: light dark;
+
+    --light-bg: #FDFDFE;
+    --light-color: #333;
+    --light-focus: #FF0000;
+
+    /* FIXME: dark mode looks off */
+    --dark-bg: #123;
+    --dark-color: #DDD;
+    --dark-focus: #5BF;
+}
+* {
+    background-color: light-dark(var(--light-bg), var(--dark-bg));
+    color: light-dark(var(--light-color), var(--dark-color));
+}
+body {
+    margin:40px auto;
+    max-width:300px;
+    line-height:1.6;
+    font-size:1.125em;
+    padding:0 10px;
+    font-family: serif;
+
+    @media only screen and (max-width: 768px) {
+        font-size: 1.5em;
+    }
+}
+h1 {
+    line-height:1.2;
+    text-align: center;
+    font-size: 300%;
+}
+.small { font-size: 70%; }
+.center { text-align: center; }

@@ -1,0 +1,33 @@
+{% extends "base.html.jinja" %}
+
+{% block head %}
+<style>
+p { text-align: center; }
+.footer { margin-top: 2em; }
+</style>
+{% endblock %}
+
+{% block body %}
+<h1>Chuva</h1>
+
+<p>Rain Prediction by location and postcode for The Netherlands, by <a href="https://caio.co">caio</a></p>
+{% endblock %}
+
+{% block footer %}
+<div class="footer small">
+<details>
+<summary>More info</summary>
+Javascript is used to get your current location. You can access predictions directly via:
+<ul>
+<li>A valid 4 or 6 digit postcode. Ex: <a href="/1017CE">/1017CE</a> or <a href="/2636">/2636</a></li>
+<li>Any coordinate within The Netherlands. Ex: <a href="/@52.3752214,4.8813962">/@52.3752214,4.8813962</a></li>
+</ul>
+Source code at <a href="http://caio.co/de/chuva">https://caio.co/de/chuva</a>
+<br/>
+Data provided by <a href="https://dataplatform.knmi.nl/">KNMI</a>
+<br/>
+<br/>
+No cookies. No ads. No tracking.
+</details>
+</div>
+{% endblock %}

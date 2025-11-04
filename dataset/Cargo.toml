@@ -1,0 +1,11 @@
+[package]
+name = "dataset"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+load = ["dep:hdf5-metno"]
+
+[dependencies]
+proj4rs = "0.1.9"
+hdf5-metno = { version = "0.10.1", default-features = false, features = ["static","zlib"], optional = true }

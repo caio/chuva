@@ -1,0 +1,36 @@
+It's {{ now.strftime("%H:%M") }}
+
+{{ spark }}
+{{ marker }}
+
+{%- for event in events -%}
+   {%- if loop.first -%}
+     {%- if event.is_rain && !loop.last ~%}
+     - Rain ends in {{ self.minutes_relative(event.ends_at) }}
+     {%- else if event.is_showers ~%}
+     - Showers. No end in sight :(
+     {%- else if event.is_rain ~%}
+     - Rain. No end in sight :(
+     {%- else if !loop.last ~%}
+     - No rain for {{ self.minutes_relative(event.ends_at) }}
+     {%- else ~%}
+     - No rain in sight
+     {%- endif -%}
+
+   {# middle #}
+   {%- else if !loop.last ~%}
+     {%- if event.is_showers ~%}
+     - Showers from {{ event.starts_at.strftime("%H:%M") }} until {{ event.ends_at.strftime("%H:%M") }}
+     {%- else if event.is_rain ~%}
+     - Rain from {{ event.starts_at.strftime("%H:%M") }} until {{ event.ends_at.strftime("%H:%M") }}
+     {%- endif -%}
+
+   {# last #}
+   {%- else ~%}
+     {%- if event.is_showers ~%}
+     - Showers start at {{ event.starts_at.strftime("%H:%M") }}
+     {%- else if event.is_rain ~%}
+     - Rain starts at {{ event.starts_at.strftime("%H:%M") }}
+     {%- endif -%}
+   {%- endif -%}
+{%- endfor %}

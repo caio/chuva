@@ -1,0 +1,63 @@
+{% extends "base.html.jinja" %}
+
+{% block head %}
+<style>
+svg > rect {
+    fill: light-dark(var(--light-color), var(--dark-color));
+}
+svg > polyline {
+    fill: light-dark(var(--light-focus), var(--dark-focus));
+}
+ol { list-style-type: none; padding: 0; }
+li { text-align: center; }
+</style>
+{% endblock %}
+
+{% block body %}
+<h1>{{ now.strftime("%H:%M") }}</h1>
+
+<svg width={{ plot.width() }} height={{ plot.height() }}>
+{%- for rect in plot -%}
+{%- if rect.height > 0 ~%}
+<rect x={{ rect.x }} y={{ rect.y }} width={{ rect.width }} height={{ rect.height }}><title>{{ rect.value }} mm/h @ {{ rect.at.strftime("%H:%M") }}</title></rect>
+{%- endif -%}
+{%- endfor ~%}
+{{ plot.marker | safe }}
+</svg>
+
+
+<ol>
+{%- for event in events -%}
+   {%- if loop.first -%}
+     {%- if event.is_rain && !loop.last ~%}
+     <li>Rain ends in {{ self.minutes_relative(event.ends_at) }}</li>
+     {%- else if event.is_showers ~%}
+     <li>Showers. No end in sight :(</li>
+     {%- else if event.is_rain ~%}
+     <li>Rain. No end in sight :(</li>
+     {%- else if !loop.last ~%}
+     <li>No rain for {{ self.minutes_relative(event.ends_at) }}</li>
+     {%- else ~%}
+     <li>No rain in sight</li>
+     {%- endif -%}
+
+   {# middle #}
+   {%- else if !loop.last -%}
+     {%- if event.is_showers ~%}
+     <li>Showers from {{ event.starts_at.strftime("%H:%M") }} until {{ event.ends_at.strftime("%H:%M") }}</li>
+     {%- else if event.is_rain ~%}
+     <li>Rain from {{ event.starts_at.strftime("%H:%M") }} until {{ event.ends_at.strftime("%H:%M") }}</li>
+     {%- endif -%}
+
+   {# last #}
+   {%- else -%}
+     {%- if event.is_showers ~%}
+     <li>Showers start at {{ event.starts_at.strftime("%H:%M") }}</li>
+     {%- else if event.is_rain ~%}
+     <li>Rain starts at {{ event.starts_at.strftime("%H:%M") }}</li>
+     {%- endif -%}
+   {%- endif -%}
+{# no events #}
+{%- endfor ~%}
+</ol>
+{% endblock %}
