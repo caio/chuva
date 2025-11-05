@@ -211,14 +211,26 @@ fn async_main(chuva: Chuva) -> Result<()> {
     });
 
     rt.block_on(async move {
-        let listen_addr = "127.0.0.1:42069";
-        // lol @ async + to_socket_addresses
-        let listener = TcpListener::bind(listen_addr).await?;
-
+        let listener = listener_from_env_or("127.0.0.1:42069")?;
         caveman::serve(listener, service).await;
 
         Ok(())
     })
+}
+
+fn listener_from_env_or(fallback: &str) -> Result<TcpListener> {
+    let mut listenfd = listenfd::ListenFd::from_env();
+
+    let listener = if let Some(from_env) = listenfd.take_tcp_listener(0)? {
+        from_env
+    } else {
+        eprintln!("WARNING: no tcp listener from env, using {fallback}");
+        std::net::TcpListener::bind(fallback)?
+    };
+    listener.set_nonblocking(true)?;
+
+    let listener = TcpListener::from_std(listener)?;
+    Ok(listener)
 }
 
 // Shitty fmt::Write adapter for stdout

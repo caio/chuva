@@ -7,7 +7,8 @@ edition = "2024"
 dataset = { version = "0.1.0", default-features = false, features = ["load"], path = "../dataset" }
 caveman = { version = "0.1.0", default-features = false, path = "../caveman" }
 
-fst = "0.4.7"
+fst = { version = "0.4.7", default-features = false }
 jiff = { version = "0.2.15", default-features = false, features = ["perf-inline", "std", "tz-fat", "tzdb-zoneinfo"] }
 askama = { version = "0.14.0", default-features = false, features = ["blocks", "derive", "std"] }
 tokio = { version = "1.47.1", default-features = false, features = ["net", "rt"] }
+listenfd = { version = "1.0.2", default-features = false }
