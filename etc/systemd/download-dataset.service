@@ -1,0 +1,10 @@
+[Unit]
+Description=Downloads nowcast dataset and restarts moros service on success
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=python3 /opt/caio.co/bin/knmi_precip_nowcast_latest.py /opt/caio.co/data/knmi/
+# Get a token here https://developer.dataplatform.knmi.nl/open-data-api#token
+SetCredential=api:YOUR_API_TOKEN

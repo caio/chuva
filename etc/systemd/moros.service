@@ -1,0 +1,10 @@
+[Unit]
+Description=moros
+Requires=moros.socket
+
+[Service]
+ExecStart=/opt/caio.co/bin/chuva serve /opt/caio.co/data/knmi/
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

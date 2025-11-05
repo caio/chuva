@@ -1,0 +1,8 @@
+[Unit]
+Description=moros public
+PartOf=moros.service
+
+[Socket]
+ListenStream=42069
+ReusePort=true
+NoDelay=true

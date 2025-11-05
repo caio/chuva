@@ -1,0 +1,9 @@
+[Unit]
+Description=Run download-dataset every 5 minutes
+After=network-online.target
+
+[Timer]
+OnCalendar=*:0/5
+
+[Install]
+WantedBy=network-online.target
