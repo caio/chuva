@@ -113,7 +113,9 @@ def main():
         os.remove(file)
 
     logger.info("Killing chuva process")
-    res = subprocess.run("/bin/sh -c 'kill -TERM $(pidof chuva)'", shell=True)
+    res = subprocess.run(
+        "/bin/sh -c 'kill -TERM $(pidof chuva)'", shell=True, capture_output=True
+    )
     if res.returncode != 0:
         logger.error("Failed to kill chuva: %s", res.stderr)
 
