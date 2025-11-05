@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import subprocess
 
 from glob import glob
 
@@ -110,6 +111,11 @@ def main():
     for file in datasets[24:]:
         logger.info(f"Deleting old dataset {file}")
         os.remove(file)
+
+    logger.info("Killing chuva process")
+    res = subprocess.run("/bin/sh -c 'kill -TERM $(pidof chuva)'", shell=True)
+    if res.returncode != 0:
+        logger.error("Failed to kill chuva: %s", res.stderr)
 
     logger.info("Done")
 
