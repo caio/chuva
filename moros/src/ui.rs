@@ -26,8 +26,8 @@ impl<'a> Renderer<'a> {
         }
     }
 
-    pub fn lenient(mut self) -> Self {
-        self.lenient = true;
+    pub fn lenient(mut self, lenient: bool) -> Self {
+        self.lenient = lenient;
         self
     }
 
@@ -82,6 +82,7 @@ impl<'a> Renderer<'a> {
             self.tz.to_datetime(now),
             slot,
             preds,
+            self.lenient,
         );
 
         tmpl.render_into(&mut writer)?;
@@ -95,10 +96,17 @@ pub struct NoRain {
     now: DateTime,
 }
 
-// could be static eh
 #[derive(Template)]
 #[template(path = "index.html.jinja")]
 pub struct Index;
+
+impl Index {
+    // just so I don't have to `use askama::Template` outside of this mod
+    pub fn render_into<W: std::fmt::Write>(&self, mut writer: W) -> Result<()> {
+        Template::render_into(self, &mut writer)?;
+        Ok(())
+    }
+}
 
 #[derive(Template)]
 #[template(path = "prediction.txt.jinja")]
@@ -130,6 +138,7 @@ pub struct PredictionHtml<'a> {
     now: DateTime,
     plot: Plot<'a>,
     events: Events<'a>,
+    demo: bool,
 }
 
 // XXX Could impl Display and gen the whole plot at once
@@ -278,11 +287,18 @@ impl<'a> Iterator for Plot<'a> {
 }
 
 impl<'a> PredictionHtml<'a> {
-    pub fn new(created_at: DateTime, now: DateTime, slot: usize, preds: Prediction<'a>) -> Self {
+    pub fn new(
+        created_at: DateTime,
+        now: DateTime,
+        slot: usize,
+        preds: Prediction<'a>,
+        demo: bool,
+    ) -> Self {
         Self {
             now,
             events: Events::new(created_at, slot, preds),
             plot: Plot::new(preds, slot, created_at),
+            demo,
         }
     }
 

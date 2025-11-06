@@ -14,6 +14,9 @@ li { text-align: center; }
 {% endblock %}
 
 {% block body %}
+{% if demo ~%}
+<p><center><strong>WARNING:</strong> Not real data</center></p>
+{% endif -%}
 <h1>{{ now.strftime("%H:%M") }}</h1>
 
 <svg width={{ plot.width() }} height={{ plot.height() }}>
@@ -25,11 +28,12 @@ li { text-align: center; }
 {{ plot.marker | safe }}
 </svg>
 
-
 <ol>
 {%- for event in events -%}
    {%- if loop.first -%}
-     {%- if event.is_rain && !loop.last ~%}
+     {%- if event.is_showers && !loop.last ~%}
+     <li>Showers end in {{ self.minutes_relative(event.ends_at) }}</li>
+     {%- else if event.is_rain && !loop.last ~%}
      <li>Rain ends in {{ self.minutes_relative(event.ends_at) }}</li>
      {%- else if event.is_showers ~%}
      <li>Showers. No end in sight :(</li>

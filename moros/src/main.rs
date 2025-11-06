@@ -1,33 +1,22 @@
-use std::{convert::Infallible, io::Write as _, sync::Arc, time::SystemTime};
+use std::{convert::Infallible, sync::Arc, time::SystemTime};
 
 use jiff::tz::TimeZone;
 use tokio::net::TcpListener;
 
 use caveman::{
     BodyBytes, BytesMut, Request,
-    http::{HeaderName, Method, Response, StatusCode, header::CONTENT_TYPE},
+    http::{Method, Response, StatusCode, header::CONTENT_TYPE},
     service_fn,
 };
 
 mod interpreter;
+mod ui;
+mod util;
 
 mod chuva;
 use chuva::{Chuva, Prediction};
 
-mod ui;
-
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
-
-// preserve starting /; strip last one
-// so that mathing /path also matches /path/
-fn normalize(mut path: &str) -> &str {
-    if path.len() > 1
-        && let Some(prefix) = path.strip_suffix("/")
-    {
-        path = prefix;
-    }
-    path
-}
 
 #[derive(Debug)]
 enum View<'a> {
@@ -35,6 +24,7 @@ enum View<'a> {
     Info,
     LocationJs,
     StyleCss,
+    Demo,
     Postcode(&'a str, Prediction<'a>),
     BadPostcode,
     Coords(f64, f64, Prediction<'a>),
@@ -42,52 +32,24 @@ enum View<'a> {
     NotFound,
 }
 
-fn latlon_from_path(path: &str) -> Option<(f64, f64)> {
-    // two floats, separated by a comma
-    path.split_once(',').and_then(|(lat, lon)| {
-        lat.parse::<f64>()
-            .and_then(|lat| lon.parse::<f64>().map(|lon| (lat, lon)))
-            .ok()
-    })
-}
-
-fn wants_plaintext(req: &Request) -> bool {
-    // If text/plain comes before anything with html
-    // in the accept header
-    for accept in req.headers().get_all(HeaderName::from_static("accept")) {
-        // y no &[u8].contains(b"needle")?
-        // https://github.com/rust-lang/rust/issues/134149
-        if accept.as_bytes().windows(4).any(|w| w == b"html") {
-            break;
-        }
-        if accept == "text/plain" {
-            return true;
-        }
-    }
-
-    // Or the query string contains txt=1
-    caveman::parse_qs(req.uri().query().unwrap_or_default())
-        .flatten()
-        .any(|(key, value)| key == "txt" && value == "1")
-}
-
-fn route<'a>(req: &'a Request, preds: &'a Chuva) -> View<'a> {
+fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
     if req.method() != Method::GET {
         return View::NotFound;
     }
 
-    let path = normalize(req.uri().path());
+    let path = util::normalize(req.uri().path());
     match path {
         "/" => View::Index,
         "/info" => View::Info,
         "/location.js" => View::LocationJs,
         "/style.css" => View::StyleCss,
+        "/demo" => View::Demo,
         // /@lat,lon (ex: @52.363137,4.889856)
         path if path.starts_with("/@") => {
             let (_, coords) = path.split_at(2);
-            latlon_from_path(coords)
+            util::latlon_from_path(coords)
                 .and_then(|(lat, lon)| {
-                    preds
+                    chuva
                         .by_lat_lon(lat, lon)
                         .map(|preds| View::Coords(lat, lon, preds))
                 })
@@ -96,7 +58,7 @@ fn route<'a>(req: &'a Request, preds: &'a Chuva) -> View<'a> {
         // /<6-digit-postcode>
         path if path.len() == 7 => {
             let (_, code) = path.split_at(1);
-            preds
+            chuva
                 .by_postcode(code)
                 .map(|preds| View::Postcode(code, preds))
                 .unwrap_or(View::BadPostcode)
@@ -104,7 +66,7 @@ fn route<'a>(req: &'a Request, preds: &'a Chuva) -> View<'a> {
         // /<4-digit-postcode>
         path if path.len() == 5 => {
             let (_, code) = path.split_at(1);
-            preds
+            chuva
                 .by_postcode4(code)
                 .map(|preds| View::Postcode(code, preds))
                 .unwrap_or(View::BadPostcode)
@@ -114,10 +76,9 @@ fn route<'a>(req: &'a Request, preds: &'a Chuva) -> View<'a> {
 }
 
 fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
-    let preds = match route(&req, &state.chuva) {
+    let (preds, lenient) = match route(&req, &state.chuva) {
         View::Index => {
             let mut body = BytesMut::new();
-            use askama::Template;
             ui::Index.render_into(&mut body)?;
             return Ok(Response::new(body.into()));
         }
@@ -138,8 +99,15 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
                 .body(ui::STYLE_CSS.into())?;
             return Ok(response);
         }
-        View::Postcode(_code, preds) => preds,
-        View::Coords(_lat, _lon, preds) => preds,
+        View::Demo => {
+            let preds: Prediction<'static> = &[
+                0.48, 0.84, 0.0, 1.92, 4.32, 5.52, 2.76, 0.12, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.12, 1.56, 3.24, 1.92, 0.24, 0.0, 0.0,
+            ];
+            (preds, true)
+        }
+        View::Postcode(_code, preds) => (preds, false),
+        View::Coords(_lat, _lon, preds) => (preds, false),
         View::BadPostcode => {
             let response = Response::builder()
                 .status(StatusCode::BAD_REQUEST)
@@ -160,16 +128,9 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
         }
     };
 
-    // let preds: Prediction<'static> = &[
-    //     0.48, 0.84, 1.92, 4.32, 5.52, 2.76, 0.12, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    //     0.12, 1.56, 3.24, 1.92, 0.24, 0.0, 0.0, 0.0,
-    // ];
-
-    // let renderer = ui::Renderer::new(&state.chuva, &state.tz)
-    //     .plain_text(wants_plaintext(&req))
-    //     .lenient();
-
-    let renderer = ui::Renderer::new(&state.chuva, &state.tz).plain_text(wants_plaintext(&req));
+    let renderer = ui::Renderer::new(&state.chuva, &state.tz)
+        .plain_text(util::wants_plaintext(&req))
+        .lenient(lenient);
 
     let mut body = BytesMut::new();
     renderer.render_into(preds, &mut body)?;
@@ -233,27 +194,6 @@ fn listener_from_env_or(fallback: &str) -> Result<TcpListener> {
     Ok(listener)
 }
 
-// Shitty fmt::Write adapter for stdout
-// erases io errors into fmt::Error
-// https://github.com/rust-lang/libs-team/issues/133
-struct FmtStdout(std::io::StdoutLock<'static>);
-
-impl FmtStdout {
-    fn new() -> Self {
-        let stdout = std::io::stdout();
-        let guard = stdout.lock();
-        Self(guard)
-    }
-}
-
-impl std::fmt::Write for FmtStdout {
-    fn write_str(&mut self, s: &str) -> std::fmt::Result {
-        self.0
-            .write_all(s.as_bytes())
-            .map_err(|_err| std::fmt::Error)
-    }
-}
-
 fn main() -> Result<()> {
     let mut args = std::env::args();
 
@@ -295,8 +235,10 @@ fn main() -> Result<()> {
 
     if let Some(preds) = preds {
         let tz = TimeZone::get("Europe/Amsterdam")?;
-        let renderer = ui::Renderer::new(&chuva, &tz).plain_text(true).lenient();
-        renderer.render_into(preds, FmtStdout::new())?;
+        let renderer = ui::Renderer::new(&chuva, &tz)
+            .plain_text(true)
+            .lenient(true);
+        renderer.render_into(preds, util::FmtStdout::new())?;
     } else {
         println!("invalid input");
     }
