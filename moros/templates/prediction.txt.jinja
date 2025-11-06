@@ -5,7 +5,9 @@ It's {{ now.strftime("%H:%M") }}
 
 {%- for event in events -%}
    {%- if loop.first -%}
-     {%- if event.is_rain && !loop.last ~%}
+     {%- if event.is_showers && !loop.last ~%}
+     - Showers end in {{ self.minutes_relative(event.ends_at) }}
+     {%- else if event.is_rain && !loop.last ~%}
      - Rain ends in {{ self.minutes_relative(event.ends_at) }}
      {%- else if event.is_showers ~%}
      - Showers. No end in sight :(
