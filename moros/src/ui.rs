@@ -438,7 +438,3 @@ const fn spark(mmhr: f64) -> char {
         '█'
     }
 }
-
-pub const LOCATION_JS: &str = include_str!("../asset/location.js");
-
-pub const STYLE_CSS: &str = include_str!("../asset/style.css");

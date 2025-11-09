@@ -5,7 +5,7 @@ use tokio::net::TcpListener;
 
 use caveman::{
     BodyBytes, BytesMut, Request,
-    http::{Method, Response, StatusCode, header::CONTENT_TYPE},
+    http::{Method, Response, StatusCode},
     service_fn,
 };
 
@@ -22,8 +22,6 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 enum View<'a> {
     Index,
     Info,
-    LocationJs,
-    StyleCss,
     Demo,
     Postcode(&'a str, Prediction<'a>),
     BadPostcode,
@@ -41,8 +39,6 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
     match path {
         "/" => View::Index,
         "/info" => View::Info,
-        "/location.js" => View::LocationJs,
-        "/style.css" => View::StyleCss,
         "/demo" => View::Demo,
         // /@lat,lon (ex: @52.363137,4.889856)
         path if path.starts_with("/@") => {
@@ -86,18 +82,6 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
             return Ok(Response::new(
                 format!("Dataset: {}\n", state.chuva.filename()).into(),
             ));
-        }
-        View::LocationJs => {
-            let response = Response::builder()
-                .header(CONTENT_TYPE, "text/javascript")
-                .body(ui::LOCATION_JS.into())?;
-            return Ok(response);
-        }
-        View::StyleCss => {
-            let response = Response::builder()
-                .header(CONTENT_TYPE, "text/css")
-                .body(ui::STYLE_CSS.into())?;
-            return Ok(response);
         }
         View::Demo => {
             let preds: Prediction<'static> = &[
