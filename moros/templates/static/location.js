@@ -34,9 +34,3 @@ function setError(msg) {
         error.innerText = "Error retrieving location";
     }
 }
-
-window.onload = (event) => {
-    if (!!navigator.geolocation) {
-        document.getElementById("button").disabled = false;
-    }
-}
