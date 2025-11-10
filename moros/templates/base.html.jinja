@@ -26,16 +26,14 @@ window.onload = (event) => {
 {% block body %}
 {% endblock %}
 
-<div id="location">
-<center>
+<div id="location" class="center">
 <button id="button" onclick="getPosition()" disabled>Use my location</button>
 <div id="error" class="small"></div>
-</center>
 </div>
 
 {% block footer %}
 <br>
-<center><span class="small"><a href="/">chuva</a></span></center>
+<div class="small center"><a href="/">chuva</a></div>
 {% endblock %}
 
 </body>
