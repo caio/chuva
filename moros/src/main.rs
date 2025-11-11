@@ -28,12 +28,31 @@ enum View<'a> {
     Demo,
     App,
     Manifest,
-    Logo(u16),
+    Logo(Logo),
     Postcode(&'a str, Prediction<'a>),
     BadPostcode,
     Coords(f64, f64, Prediction<'a>),
     BadCoords,
     NotFound,
+}
+
+#[derive(Debug)]
+enum Logo {
+    X16,
+    X32,
+    X192,
+    X512,
+}
+
+impl Logo {
+    fn as_bytes(&self) -> &'static [u8] {
+        match self {
+            Logo::X16 => include_bytes!("../asset/logo16.png"),
+            Logo::X32 => include_bytes!("../asset/logo32.png"),
+            Logo::X192 => include_bytes!("../asset/logo192.png"),
+            Logo::X512 => include_bytes!("../asset/logo512.png"),
+        }
+    }
 }
 
 fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
@@ -48,10 +67,10 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
         "/demo" => View::Demo,
         "/app" => View::App,
         "/manifest.json" => View::Manifest,
-        "/static/logo16.png" => View::Logo(16),
-        "/static/logo32.png" => View::Logo(32),
-        "/static/logo192.png" => View::Logo(192),
-        "/static/logo512.png" => View::Logo(512),
+        "/static/logo16.png" => View::Logo(Logo::X16),
+        "/static/logo32.png" => View::Logo(Logo::X32),
+        "/static/logo192.png" => View::Logo(Logo::X192),
+        "/static/logo512.png" => View::Logo(Logo::X512),
         // /@lat,lon (ex: @52.363137,4.889856)
         path if path.starts_with("/@") => {
             let (_, coords) = path.split_at(2);
@@ -114,18 +133,11 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
                 .body(data.into())?;
             return Ok(response);
         }
-        View::Logo(size) => {
-            let data: &'static [u8] = match size {
-                16 => include_bytes!("../asset/logo16.png"),
-                32 => include_bytes!("../asset/logo32.png"),
-                192 => include_bytes!("../asset/logo192.png"),
-                512 => include_bytes!("../asset/logo512.png"),
-                _ => &[], // unreachable
-            };
+        View::Logo(logo) => {
             let response = Response::builder()
                 .header(CONTENT_TYPE, "image/png")
                 .header(CACHE_CONTROL, "max-age:86400")
-                .body(data.into())?;
+                .body(logo.as_bytes().into())?;
             return Ok(response);
         }
         View::Postcode(_code, preds) => (preds, false),
