@@ -23,6 +23,7 @@ enum View<'a> {
     Index,
     Info,
     Demo,
+    Logo(u16),
     Postcode(&'a str, Prediction<'a>),
     BadPostcode,
     Coords(f64, f64, Prediction<'a>),
@@ -40,6 +41,10 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
         "/" => View::Index,
         "/info" => View::Info,
         "/demo" => View::Demo,
+        "/static/logo16.png" => View::Logo(16),
+        "/static/logo32.png" => View::Logo(32),
+        "/static/logo192.png" => View::Logo(192),
+        "/static/logo512.png" => View::Logo(512),
         // /@lat,lon (ex: @52.363137,4.889856)
         path if path.starts_with("/@") => {
             let (_, coords) = path.split_at(2);
@@ -89,6 +94,20 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
                 0.0, 0.0, 0.0, 0.12, 1.56, 3.24, 1.92, 0.24, 0.0, 0.0,
             ];
             (preds, true)
+        }
+        View::Logo(size) => {
+            let data: &'static [u8] = match size {
+                16 => include_bytes!("../asset/logo16.png"),
+                32 => include_bytes!("../asset/logo32.png"),
+                192 => include_bytes!("../asset/logo192.png"),
+                512 => include_bytes!("../asset/logo512.png"),
+                _ => &[], // unreachable
+            };
+            let response = Response::builder()
+                .header(caveman::http::header::CONTENT_TYPE, "image/png")
+                .header(caveman::http::header::CACHE_CONTROL, "max-age:86400")
+                .body(data.into())?;
+            return Ok(response);
         }
         View::Postcode(_code, preds) => (preds, false),
         View::Coords(_lat, _lon, preds) => (preds, false),
