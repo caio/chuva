@@ -5,7 +5,10 @@ use tokio::net::TcpListener;
 
 use caveman::{
     BodyBytes, BytesMut, Request,
-    http::{Method, Response, StatusCode},
+    http::{
+        Method, Response, StatusCode,
+        header::{CACHE_CONTROL, CONTENT_TYPE},
+    },
     service_fn,
 };
 
@@ -23,6 +26,8 @@ enum View<'a> {
     Index,
     Info,
     Demo,
+    App,
+    Manifest,
     Logo(u16),
     Postcode(&'a str, Prediction<'a>),
     BadPostcode,
@@ -41,6 +46,8 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
         "/" => View::Index,
         "/info" => View::Info,
         "/demo" => View::Demo,
+        "/app" => View::App,
+        "/manifest.json" => View::Manifest,
         "/static/logo16.png" => View::Logo(16),
         "/static/logo32.png" => View::Logo(32),
         "/static/logo192.png" => View::Logo(192),
@@ -80,7 +87,7 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
     let (preds, lenient) = match route(&req, &state.chuva) {
         View::Index => {
             let mut body = BytesMut::new();
-            ui::Index.render_into(&mut body)?;
+            ui::Index::render_into(false, &mut body)?;
             return Ok(Response::new(body.into()));
         }
         View::Info => {
@@ -95,6 +102,18 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
             ];
             (preds, true)
         }
+        View::App => {
+            let mut body = BytesMut::new();
+            ui::Index::render_into(true, &mut body)?;
+            return Ok(Response::new(body.into()));
+        }
+        View::Manifest => {
+            let data = include_bytes!("../asset/manifest.json").as_slice();
+            let response = Response::builder()
+                .header(CONTENT_TYPE, "application/manifest+json")
+                .body(data.into())?;
+            return Ok(response);
+        }
         View::Logo(size) => {
             let data: &'static [u8] = match size {
                 16 => include_bytes!("../asset/logo16.png"),
@@ -104,8 +123,8 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
                 _ => &[], // unreachable
             };
             let response = Response::builder()
-                .header(caveman::http::header::CONTENT_TYPE, "image/png")
-                .header(caveman::http::header::CACHE_CONTROL, "max-age:86400")
+                .header(CONTENT_TYPE, "image/png")
+                .header(CACHE_CONTROL, "max-age:86400")
                 .body(data.into())?;
             return Ok(response);
         }

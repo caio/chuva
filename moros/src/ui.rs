@@ -98,12 +98,14 @@ pub struct NoRain {
 
 #[derive(Template)]
 #[template(path = "index.html.jinja")]
-pub struct Index;
+pub struct Index {
+    intrusive: bool,
+}
 
 impl Index {
     // just so I don't have to `use askama::Template` outside of this mod
-    pub fn render_into<W: std::fmt::Write>(&self, mut writer: W) -> Result<()> {
-        Template::render_into(self, &mut writer)?;
+    pub fn render_into<W: std::fmt::Write>(intrusive: bool, mut writer: W) -> Result<()> {
+        Self { intrusive }.render_into(&mut writer)?;
         Ok(())
     }
 }
