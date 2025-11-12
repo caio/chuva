@@ -106,7 +106,7 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
     let (preds, lenient) = match route(&req, &state.chuva) {
         View::Index => {
             let mut body = BytesMut::new();
-            ui::Index::render_into(false, &mut body)?;
+            ui::Index::render_into(&mut body)?;
             return Ok(Response::new(body.into()));
         }
         View::Info => {
@@ -123,7 +123,7 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
         }
         View::App => {
             let mut body = BytesMut::new();
-            ui::Index::render_into(true, &mut body)?;
+            ui::App::render_into(&mut body)?;
             return Ok(Response::new(body.into()));
         }
         View::Manifest => {

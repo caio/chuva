@@ -11,17 +11,6 @@ p { text-align: center; }
 <p>Rain Prediction by location and postcode for The Netherlands, by <a href="https://caio.co">caio</a></p>
 {% endblock %}
 
-{% block onload %}
-window.onload = (event) => {
-    if (!!navigator.geolocation) {
-        document.getElementById("button").disabled = false;
-    }
-    {% if intrusive %}
-    getPosition();
-    {% endif %}
-}
-{% endblock %}
-
 {% block footer %}
 <div class="footer small">
 <details>

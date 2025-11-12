@@ -1,0 +1,21 @@
+{% extends "base.html.jinja" %}
+
+{% block style %}
+p { text-align: center; }
+.footer { margin-top: 2em; }
+{% endblock %}
+
+{% block body %}
+<h1>Chuva</h1>
+
+<p>Rain Prediction by location and postcode for The Netherlands, by <a href="https://caio.co">caio</a></p>
+{% endblock %}
+
+{% block onload %}
+window.onload = (event) => {
+    if (!!navigator.geolocation) {
+        document.getElementById("button").disabled = false;
+    }
+    getPosition();
+}
+{% endblock %}
