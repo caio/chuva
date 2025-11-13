@@ -1,5 +1,16 @@
 {% extends "base.html.jinja" %}
 
+{% block style %}
+svg > rect {
+    fill: light-dark(var(--light-color), var(--dark-color));
+}
+svg > polyline {
+    fill: light-dark(var(--light-focus), var(--dark-focus));
+}
+ol { list-style-type: none; padding: 0; }
+li { text-align: center; }
+{% endblock %}
+
 {% block script %}
 {% include "static/app.js" %}
 {% endblock %}
