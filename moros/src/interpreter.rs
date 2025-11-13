@@ -18,7 +18,7 @@ pub enum Expr {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(slot: usize, src: &'a [f64]) -> Self {
+    pub fn new(slot: usize, src: &'a [f32]) -> Self {
         Self::from_tokenizer(Tokenizer::new(slot, src))
     }
 
@@ -121,7 +121,7 @@ impl Token {
 #[derive(Clone, Copy)]
 struct Tokenizer<'a> {
     pos: usize,
-    preds: &'a [f64],
+    preds: &'a [f32],
 }
 
 impl<'a> Tokenizer<'a> {
@@ -131,7 +131,7 @@ impl<'a> Tokenizer<'a> {
     //
     // This way the code that transforms these into human
     // readable time has to dance less
-    fn new(pos: usize, preds: &'a [f64]) -> Self {
+    fn new(pos: usize, preds: &'a [f32]) -> Self {
         Self { pos, preds }
     }
 
@@ -144,13 +144,13 @@ impl<'a> Tokenizer<'a> {
         //     reads more concisely
 
         // Rain
-        if self.preds[self.pos] > 0f64 {
+        if self.preds[self.pos] > 0f32 {
             if let Some((end, _)) = self
                 .preds
                 .iter()
                 .enumerate()
                 .skip(self.pos + 1)
-                .find(|x| x.1 == &0f64)
+                .find(|x| x.1 == &0f32)
             {
                 let start = self.pos;
                 self.pos = end;
@@ -171,7 +171,7 @@ impl<'a> Tokenizer<'a> {
             .iter()
             .enumerate()
             .skip(self.pos + 1)
-            .find(|x| x.1 > &0f64)
+            .find(|x| x.1 > &0f32)
         {
             let start = self.pos;
             self.pos = end;
@@ -290,11 +290,11 @@ mod tests {
     use super::{Expr, Lexer, Token, Tokenizer};
     use crate::chuva::Prediction;
 
-    fn iter_tokens(pos: usize, preds: &[f64]) -> impl Iterator<Item = Token> {
+    fn iter_tokens(pos: usize, preds: &[f32]) -> impl Iterator<Item = Token> {
         Tokenizer::new(pos, preds)
     }
 
-    fn interpret(pos: usize, data: &[f64]) -> impl Iterator<Item = Expr> {
+    fn interpret(pos: usize, data: &[f32]) -> impl Iterator<Item = Expr> {
         Lexer::from_tokenizer(Tokenizer::new(pos, data))
     }
 

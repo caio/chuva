@@ -88,13 +88,13 @@ impl Default for Projector {
 //      Maybe mmap? CGI so I don't need the caveman this time?
 
 #[cfg(feature = "load")]
-pub type Dataset = Box<[f64; STEPS * HEIGHT * WIDTH]>;
+pub type Dataset = Box<[f32; STEPS * HEIGHT * WIDTH]>;
 
 #[cfg(feature = "load")]
 pub fn load<P: AsRef<std::path::Path>>(
     path: P,
 ) -> Result<Dataset, Box<dyn std::error::Error + Send + Sync>> {
-    let mut data = vec![0f64; STEPS * HEIGHT * WIDTH];
+    let mut data = vec![0f32; STEPS * HEIGHT * WIDTH];
 
     // metadata docs:
     // https://www.knmi.nl/kennis-en-datacentrum/publicatie/knmi-hdf5-data-format-specification-v3-5
@@ -110,7 +110,7 @@ pub fn load<P: AsRef<std::path::Path>>(
                 let offset = (x * WIDTH + y) * STEPS + z;
                 // `* 0.01` hdf5 /imageX/calibration/calibration_formula
                 // `* 12` to convert from 5min to 1h
-                let mmhr = f64::from(vals[[x, y]]) * 0.01 * 12f64;
+                let mmhr = f32::from(vals[[x, y]]) * 0.01 * 12f32;
                 // if mmhr >= 8.0 {
                 //     dbg!(offset - z);
                 // }

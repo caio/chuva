@@ -49,7 +49,7 @@ impl<'a> Renderer<'a> {
             Err(err) => return Err(err),
         };
 
-        let no_rain = preds.iter().all(|&mmhr| mmhr == 0f64);
+        let no_rain = preds.iter().all(|&mmhr| mmhr == 0f32);
         if no_rain && self.plain_text {
             write!(
                 writer,
@@ -214,7 +214,7 @@ struct Rect {
     at: DateTime,
 }
 
-struct Value(f64);
+struct Value(f32);
 
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -274,8 +274,8 @@ impl<'a> Plot<'a> {
 }
 
 // XXX might be nice to keep these buckets in line with spark()
-const fn scale_height(mmhr: f64) -> usize {
-    if mmhr < 0f64.next_up() {
+const fn scale_height(mmhr: f32) -> usize {
+    if mmhr < 0f32.next_up() {
         0
     } else if mmhr < 0.13 {
         7
@@ -432,11 +432,11 @@ impl<'a> Iterator for Events<'a> {
     }
 }
 
-const fn spark(mmhr: f64) -> char {
+const fn spark(mmhr: f32) -> char {
     // TODO figure out good buckets? this is pure yolo
     //      so maybe look at yearly stats and slice
     //      according to the distribution?
-    if mmhr < 0f64.next_up() {
+    if mmhr < 0f32.next_up() {
         ' '
     } else if mmhr < 0.13 {
         '▁'

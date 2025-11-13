@@ -7,7 +7,7 @@ use dataset::{Dataset, MAX_OFFSET, Projector, STEPS};
 
 type Result<T> = crate::Result<T>;
 
-pub type Prediction<'a> = &'a [f64; STEPS];
+pub type Prediction<'a> = &'a [f32; STEPS];
 
 pub struct Chuva {
     data: Dataset,
