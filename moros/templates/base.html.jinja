@@ -13,25 +13,24 @@
 {% endblock %}
 </style>
 <script>
+{% block script %}
 {% include "static/location.js" %}
-{% block onload %}
-window.onload = (event) => {
-    if (!!navigator.geolocation) {
-        document.getElementById("button").disabled = false;
-    }
-}
 {% endblock %}
 </script>
 </head>
 <body>
 
+<div id="content">
 {% block body %}
 {% endblock %}
+</div>
 
+{% block button %}
 <div id="location" class="center">
 <button id="button" onclick="getPosition()" disabled>Use my location</button>
 <div id="error" class="small"></div>
 </div>
+{% endblock %}
 
 {% block footer %}
 <br>

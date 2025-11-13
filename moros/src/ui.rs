@@ -110,12 +110,18 @@ impl Index {
 
 #[derive(Template)]
 #[template(path = "app.html.jinja")]
-pub struct App;
+pub struct App {
+    now: DateTime,
+}
 
 impl App {
+    pub fn new(now: DateTime) -> Self {
+        Self { now }
+    }
+
     // just so I don't have to `use askama::Template` outside of this mod
-    pub fn render_into<W: std::fmt::Write>(mut writer: W) -> Result<()> {
-        Self.render_into(&mut writer)?;
+    pub fn render_into<W: std::fmt::Write>(&self, mut writer: W) -> Result<()> {
+        Template::render_into(&self, &mut writer)?;
         Ok(())
     }
 }

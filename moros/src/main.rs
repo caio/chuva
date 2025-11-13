@@ -122,8 +122,9 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
             (preds, true)
         }
         View::App => {
+            let now = state.tz.to_datetime(jiff::Timestamp::now());
             let mut body = BytesMut::new();
-            ui::App::render_into(&mut body)?;
+            ui::App::new(now).render_into(&mut body)?;
             return Ok(Response::new(body.into()));
         }
         View::Manifest => {

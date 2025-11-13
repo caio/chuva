@@ -1,21 +1,16 @@
 {% extends "base.html.jinja" %}
 
-{% block style %}
-p { text-align: center; }
-.footer { margin-top: 2em; }
+{% block script %}
+{% include "static/app.js" %}
 {% endblock %}
 
 {% block body %}
-<h1>Chuva</h1>
-
-<p>Rain Prediction by location and postcode for The Netherlands, by <a href="https://caio.co">caio</a></p>
+<h1>{{ now.strftime("%H:%M") }}</h1>
 {% endblock %}
 
-{% block onload %}
-window.onload = (event) => {
-    if (!!navigator.geolocation) {
-        document.getElementById("button").disabled = false;
-    }
-    getPosition();
-}
+{% block button %}
+<div id="location" class="center">
+<button id="button" onclick="window.location.reload()">Reload</button>
+<div id="error" class="small"></div>
+</div>
 {% endblock %}
