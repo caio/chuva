@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use fst::{IntoStreamer, Streamer};
+use fst::{Automaton, IntoStreamer, Streamer};
 use jiff::Timestamp;
 
 use dataset::{Dataset, MAX_OFFSET, Projector, STEPS};
@@ -33,6 +33,7 @@ impl Chuva {
             .to_string_lossy()
             .into_owned();
         let fst = fst::Map::new(FST_STATE)?;
+
         Ok(Self {
             data,
             proj: Projector::new(),
@@ -48,8 +49,12 @@ impl Chuva {
     }
 
     pub fn by_postcode(&self, code: &str) -> Option<Prediction<'_>> {
-        let offset = self.fst.get(code)? as usize;
-        self.by_offset(offset)
+        let mut stream = self
+            .fst
+            .search(AsciiUpperCase::new(code).starts_with())
+            .into_stream();
+        let (_, offset) = stream.next()?;
+        self.by_offset(offset as usize)
     }
 
     pub fn by_postcode4(&self, code: &str) -> Option<Prediction<'_>> {
@@ -128,9 +133,52 @@ fn get_time_slot(created_at: Timestamp, now: Timestamp) -> std::result::Result<u
     }
 }
 
+struct AsciiUpperCase<'a> {
+    input: &'a [u8],
+}
+
+impl<'a> AsciiUpperCase<'a> {
+    fn new(input: &'a str) -> Self {
+        Self {
+            input: input.as_bytes(),
+        }
+    }
+}
+
+impl<'a> fst::Automaton for AsciiUpperCase<'a> {
+    type State = Option<usize>;
+
+    #[inline]
+    fn start(&self) -> Self::State {
+        Some(0)
+    }
+
+    #[inline]
+    fn is_match(&self, state: &Self::State) -> bool {
+        *state == Some(self.input.len())
+    }
+
+    #[inline]
+    fn can_match(&self, pos: &Self::State) -> bool {
+        pos.is_some()
+    }
+
+    #[inline]
+    fn accept(&self, state: &Self::State, byte: u8) -> Self::State {
+        let pos = (*state)?;
+        // The keys in the FST are in upper case.
+        // We want a case-insensitive match and to_ascii_uppercase
+        // does the right thing for bytes outside the lower case range
+        let current = self.input.get(pos).map(|b| b.to_ascii_uppercase())?;
+        if current == byte { Some(pos + 1) } else { None }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::get_time_slot;
+    use super::{AsciiUpperCase, FST_STATE, get_time_slot};
+
+    use fst::{Automaton, IntoStreamer, Streamer};
     use jiff::{Timestamp, ToSpan};
 
     #[test]
@@ -141,5 +189,22 @@ mod tests {
         assert_eq!(Ok(0), get_time_slot(now, now));
         assert_eq!(Ok(24), get_time_slot(now, now + 2.hours()));
         assert_eq!(Err(121), get_time_slot(now, now + 121.minutes()));
+    }
+
+    #[test]
+    fn case_insensitive_postcode_search() {
+        let fst = fst::Map::new(FST_STATE).expect("valid fst state");
+
+        let _ = fst.get("1017CE").expect("Key 1017CE exists in the fst");
+
+        let mut stream = fst
+            .search(AsciiUpperCase::new("1017ce").starts_with())
+            .into_stream();
+        let (key, _) = stream.next().expect("lower case search matches");
+
+        assert_eq!(
+            b"1017CE", key,
+            "lower case search should match upper case key"
+        );
     }
 }
