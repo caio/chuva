@@ -99,7 +99,7 @@ pub struct Info<'a> {
 }
 
 impl<'a> Info<'a> {
-    pub fn new(chuva: &'a Chuva, tz: &'a TimeZone) -> Self {
+    pub fn new(chuva: &'a Chuva) -> Self {
         let now = Timestamp::now();
 
         let age = Minutes(

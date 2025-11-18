@@ -111,7 +111,7 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
         }
         View::Info => {
             let mut body = BytesMut::new();
-            ui::Info::new(&state.chuva, &state.tz).render_into(&mut body)?;
+            ui::Info::new(&state.chuva).render_into(&mut body)?;
             return Ok(Response::new(body.into()));
         }
         View::Demo => {
