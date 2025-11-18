@@ -91,6 +91,47 @@ impl<'a> Renderer<'a> {
 }
 
 #[derive(Template)]
+#[template(path = "info.html.jinja")]
+pub struct Info<'a> {
+    dataset: &'a str,
+    age: Minutes,
+    status: &'static str,
+}
+
+impl<'a> Info<'a> {
+    pub fn new(chuva: &'a Chuva, tz: &'a TimeZone) -> Self {
+        let now = Timestamp::now();
+
+        let age = Minutes(
+            (now - chuva.created_at())
+                .total(jiff::Unit::Minute)
+                .unwrap_or(420.69),
+        );
+
+        let status = if age.0 < 20.0 {
+            "All systems green"
+        } else if age.0 < 100.0 {
+            "Dataset getting old"
+        } else {
+            "Dataset too old"
+        };
+
+        let dataset = chuva.filename();
+
+        Self {
+            age,
+            dataset,
+            status,
+        }
+    }
+
+    pub fn render_into<W: std::fmt::Write>(&self, mut writer: W) -> Result<()> {
+        Template::render_into(self, &mut writer)?;
+        Ok(())
+    }
+}
+
+#[derive(Template)]
 #[template(path = "norain.html.jinja")]
 pub struct NoRain {
     now: DateTime,
