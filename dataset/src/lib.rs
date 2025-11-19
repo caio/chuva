@@ -37,32 +37,20 @@ impl Projector {
     }
 
     pub(crate) fn to_x_y(&self, lat: f64, lon: f64) -> Option<(usize, usize)> {
-        // hdf5 /geographic/geo_row_offset
-        let row_offset = 3649.98193359375f64;
-
         let mut coord = (lon.to_radians(), lat.to_radians(), 0f64);
         proj4rs::transform::transform(&self.longlat, &self.knmi, &mut coord).ok()?;
 
-        // XXX wtf am I doing here for y?
-        //     just adding the offset doesn't make lat positive
-        //     but if I disregard the sign the boundaries
-        //     of the bbox in the datafile match correctly...
-        //
-        //     My current coords also map to reasonble x/y in
-        //     the image... unsure how to test this more
-        //     thoroughly than the test on `corners_match`
-        //
-        //     Why don't I see the offset mentioned in other
-        //     datasets that use the same grid/projection?
-        //     (e.g. the ensenble dataset) Is it me not holding
-        //     netcdf proper?
-        //     It's likely the offset is embeded in the netcdf
-        //     data directly:
-        //
-        //     https://github.com/KNMI/adaguc-server/blob/58d498e6f292edc3200228cda850cae03dbb0237/CCDFDataModel/CCDFHDF5IO.cpp#L1228
-        let x = coord.0.round() as usize;
-        let y = (coord.1 + row_offset).round().abs() as usize;
-        Some((x, y))
+        // hdf5 /geographic/geo_pixel_size_x
+        let size_x = 1.000003457069397f64;
+        // hdf5 /geographic/geo_pixel_size_y
+        let size_y = -1.000004768371582f64;
+        // hdf5 /geographic/geo_row_offset
+        let row_offset = 3649.98193359375f64;
+
+        let x = coord.0 * size_x + size_x / 2.0;
+        let y = (row_offset + coord.1) * size_y + size_y / 2.0;
+
+        Some((x as usize, y.round() as usize))
     }
 }
 
