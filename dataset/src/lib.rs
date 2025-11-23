@@ -86,25 +86,27 @@ pub fn load<P: AsRef<std::path::Path>>(
 
     // metadata docs:
     // https://www.knmi.nl/kennis-en-datacentrum/publicatie/knmi-hdf5-data-format-specification-v3-5
-    let file = hdf5_metno::File::open(path.as_ref())?;
+    let file = netcdf::open(path.as_ref())?;
 
-    let mut load = |name, z: usize| -> hdf5_metno::Result<()> {
-        let group = file.group(name)?;
-        let image = group.dataset("image_data")?;
-        // hdf5 /imageK/image_bytes_per_pixel is 2
-        let vals = image.read_2d::<u16>()?;
-        for x in 0..HEIGHT {
-            for y in 0..WIDTH {
-                let offset = (x * WIDTH + y) * STEPS + z;
-                // `* 0.01` hdf5 /imageX/calibration/calibration_formula
-                // `* 12` to convert from 5min to 1h
-                let mmhr = f32::from(vals[[x, y]]) * 0.01 * 12f32;
-                // if mmhr >= 8.0 {
-                //     dbg!(offset - z);
-                // }
-                data[offset] = mmhr
-            }
+    // hdf5 /imageK/image_bytes_per_pixel is 2
+    let mut buf = vec![0u16; HEIGHT * WIDTH];
+    let mut load = |name, z: usize| -> netcdf::Result<()> {
+        let group = file
+            .group(name)?
+            .ok_or_else(|| netcdf::Error::from(format!("{name} not found")))?;
+        let image = group.variable("image_data").ok_or_else(|| {
+            netcdf::Error::from(format!("group {name} doesn't contain `image_data` var"))
+        })?;
+        image.get_values_into(&mut buf, ..)?;
+
+        for (idx, value) in buf.iter().copied().enumerate() {
+            // `* 0.01` hdf5 /imageX/calibration/calibration_formula
+            // `* 12` to convert from 5min to 1h
+            let mmhr = f32::from(value) * 0.01 * 12f32;
+            let offset = (idx * STEPS) + z;
+            data[offset] = mmhr;
         }
+
         Ok(())
     };
 
