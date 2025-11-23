@@ -4,13 +4,6 @@ DEVELOP
 
    cargo watch -x 'run -- serve /path/to/dataset-dir'
 
-DEPLOY
-
-Shipping with musl because my rig and the server's libc don't
-match. The hdf5 lib is linked statically.
-
-   cargo build --target=x86_64-unknown-linux-musl --release
-
 PLAY
 
    cargo run -- cli /path/to/dataset-dir <POSTCODE|OFFSET|<LATITUDE LONGITUDE>>
