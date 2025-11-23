@@ -142,6 +142,60 @@ pub fn load<P: AsRef<std::path::Path>>(
         .expect("exact dimensions"))
 }
 
+#[cfg(feature = "load")]
+pub fn load_ensemble_dataset<P: AsRef<std::path::Path>>(
+    path: P,
+) -> Result<Dataset, Box<dyn std::error::Error + Send + Sync>> {
+    let file = netcdf::open(path.as_ref())?;
+    let mut data = vec![0f32; STEPS * HEIGHT * WIDTH];
+
+    let precip = file
+        .variable("precip_intensity")
+        .ok_or("Variable precip_intensity doesn't exist")?;
+    assert_eq!(4, precip.dimensions().len());
+
+    const ENS_SIZE: usize = 20;
+    let mut buf = vec![0u16; ENS_SIZE * HEIGHT * WIDTH];
+
+    // XXX This dataset gives predictions for up to 6h ahead, but
+    //     I'm mostly interested in the next 2h (what the nowcast
+    //     dataset provides)
+    for time in 0..STEPS {
+        let selector: netcdf::Extents = (
+            ..,   // every model output
+            time, // for this specific time slot
+            ..,   // whole height
+            ..,   // whole width
+        )
+            .try_into()
+            .expect("valid extents spec");
+        precip.get_values_into(&mut buf, selector)?;
+
+        // Each chunk contains the 20 different model predictions for
+        // the current `time` slice
+        let (chunks, remainder) = buf[..].as_chunks::<ENS_SIZE>();
+        assert!(remainder.is_empty());
+        for (idx, chunk) in chunks.iter().enumerate() {
+            // The simplest way to choose which of the outputs to use
+            // is getting the median value. My VUA decided to bias
+            // for rain (i.e.: I'd rather it tells me that it's gonna
+            // rain but it doesn't instead of the other way around),
+            // so I'm using the 70th percentile
+            let mut ens_buf = [0u16; ENS_SIZE];
+            ens_buf.copy_from_slice(chunk);
+            ens_buf.sort_unstable();
+            let offset = (idx * STEPS) + time;
+            // TODO verify scaling
+            data[offset] = f32::from(ens_buf[13]) * 0.01;
+        }
+    }
+
+    Ok(data
+        .into_boxed_slice()
+        .try_into()
+        .expect("exact dimensions"))
+}
+
 // hdf5 geo_product_corners
 // lon,lat counter-clockwise from upper left (UL)
 #[cfg(test)]
