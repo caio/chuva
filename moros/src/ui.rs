@@ -95,6 +95,7 @@ impl<'a> Renderer<'a> {
 pub struct Info<'a> {
     dataset: &'a str,
     age: Minutes,
+    kind: dataset::ModelKind,
     status: &'static str,
 }
 
@@ -122,6 +123,7 @@ impl<'a> Info<'a> {
             age,
             dataset,
             status,
+            kind: chuva.kind(),
         }
     }
 

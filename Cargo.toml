@@ -2,3 +2,6 @@
 resolver = "3"
 members = ["moros", "postcode-fst", "dataset", "caveman"]
 default-members = ["moros"]
+
+[workspace.dependencies]
+jiff = { version = "0.2.15", default-features = false, features = ["perf-inline", "std", "tz-fat", "tzdb-zoneinfo"] }
