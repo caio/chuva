@@ -60,21 +60,6 @@ impl Default for Projector {
     }
 }
 
-// TODO Check out the ensemble dataset
-//      https://dataplatform.knmi.nl/dataset/seamless-precipitation-ensemble-forecast-members-1-0
-//      Should be able to give better output during
-//      flaky ass windy af octobers
-//
-// TODO learn some netcdf eh?
-//      https://pro.arcgis.com/en/pro-app/latest/help/data/multidimensional/fundamentals-of-netcdf-data-storage.htm
-//      (developers developers developers developers):
-//      https://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html
-//
-//      Load times are gonna suck with it tho
-//      So, cronjob => dump floats to a file
-//      Then https://docs.rs/bytemuck/latest/bytemuck/fn.try_cast_slice.html
-//      Maybe mmap? CGI so I don't need the caveman this time?
-
 #[cfg(feature = "load")]
 pub type Dataset = Box<[f32; STEPS * HEIGHT * WIDTH]>;
 
@@ -171,22 +156,31 @@ pub fn load_ensemble_dataset<P: AsRef<std::path::Path>>(
             .expect("valid extents spec");
         precip.get_values_into(&mut buf, selector)?;
 
+        // FIXME Is this not laid out how I think it is?
+        //       I'm finding it difficult to compare with the
+        //       smaller model
+        // FIXME getfattr zomgwtfbbq
+        //       https://github.com/Unidata/netcdf-c/blob/6038ed2c4b8f53fbe38792d65cfca983c6c08907/libdispatch/dinfermodel.c#L1619
+        //       It shells out. To grep the output of a command that simply uses xattr.h
+        //       which they also depend on. WHEN LOADING A DATASET
+        //       Even better: if you compile on a system with the getfattr binary in the
+        //       PATH but run on a system without it you get a
+        //       `sh: 1: getfattr: not found` shat on stderr 🤡
+        //       I bet you also get an error if the filename contains spaces.
+        //
         // Each chunk contains the 20 different model predictions for
         // the current `time` slice
-        let (chunks, remainder) = buf[..].as_chunks::<ENS_SIZE>();
+        let (chunks, remainder) = buf[..].as_chunks_mut::<ENS_SIZE>();
         assert!(remainder.is_empty());
-        for (idx, chunk) in chunks.iter().enumerate() {
+        for (idx, chunk) in chunks.iter_mut().enumerate() {
             // The simplest way to choose which of the outputs to use
             // is getting the median value. My VUA decided to bias
             // for rain (i.e.: I'd rather it tells me that it's gonna
             // rain but it doesn't instead of the other way around),
             // so I'm using the 70th percentile
-            let mut ens_buf = [0u16; ENS_SIZE];
-            ens_buf.copy_from_slice(chunk);
-            ens_buf.sort_unstable();
+            chunk.sort_unstable();
             let offset = (idx * STEPS) + time;
-            // TODO verify scaling
-            data[offset] = f32::from(ens_buf[13]) * 0.01;
+            data[offset] = f32::from(chunk[13]) * 0.01;
         }
     }
 
