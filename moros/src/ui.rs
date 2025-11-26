@@ -95,7 +95,7 @@ impl<'a> Renderer<'a> {
 pub struct Info<'a> {
     dataset: &'a str,
     age: Minutes,
-    kind: dataset::ModelKind,
+    kind: chuva::ModelKind,
     status: &'static str,
 }
 
@@ -409,7 +409,7 @@ struct Marker(usize);
 
 impl std::fmt::Display for Marker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..dataset::STEPS {
+        for i in 0..chuva::STEPS {
             if i == self.0 {
                 f.write_char('^')?;
             } else {

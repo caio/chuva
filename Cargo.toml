@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["moros", "postcode-fst", "dataset", "caveman"]
+members = ["moros", "postcode-fst", "chuva", "caveman"]
 default-members = ["moros"]
 
 [workspace.dependencies]

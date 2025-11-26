@@ -40,7 +40,7 @@ In alphabetical order:
 
 - `caveman`: A `hyper`-based, `serde`-less http1 thing that can answer
   traditional web requests and knows to shutdown gracefully
-- `dataset`: An API for interacting with the KNMI dataset. It loads the
+- `chuva`: An API for interacting with the KNMI dataset. It loads the
   dataset to RAM in a format that makes it super easy to answer the
   "what's the forecast for a given coordinate" question
 - `download-dataset`: The "cron job" that retrieves the most recent

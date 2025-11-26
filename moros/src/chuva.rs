@@ -3,7 +3,7 @@ use std::path::Path;
 use fst::{Automaton, IntoStreamer, Streamer};
 use jiff::Timestamp;
 
-use dataset::{MAX_OFFSET, Model, Projector, STEPS};
+use chuva::{MAX_OFFSET, Model, Projector, STEPS};
 
 type Result<T> = crate::Result<T>;
 
@@ -70,7 +70,7 @@ impl Chuva {
         &self.model.filename
     }
 
-    pub fn kind(&self) -> dataset::ModelKind {
+    pub fn kind(&self) -> chuva::ModelKind {
         self.model.kind
     }
 

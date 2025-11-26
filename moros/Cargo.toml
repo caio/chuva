@@ -1,10 +1,10 @@
 [package]
-name = "chuva"
+name = "moros"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dataset = { version = "0.1.0", default-features = false, features = ["load"], path = "../dataset" }
+chuva = { version = "0.1.0", default-features = false, features = ["load"], path = "../chuva" }
 caveman = { version = "0.1.0", default-features = false, path = "../caveman" }
 
 jiff = { workspace = true }

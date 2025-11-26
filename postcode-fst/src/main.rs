@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs, io};
 use fst::MapBuilder;
 use tinyjson::JsonValue;
 
-use dataset::Projector;
+use chuva::Projector;
 
 fn read_pc6(parsed: &JsonValue) -> Result<&String, &'static str> {
     let properties: &HashMap<_, _> = parsed.get().ok_or("properties not an object")?;
