@@ -6,8 +6,10 @@ use jiff::{Span, Timestamp, civil::DateTime, tz::TimeZone};
 use crate::{
     Result,
     interpreter::{Expr, Lexer},
-    moros::{Moros, Prediction},
+    moros::Moros,
 };
+
+use chuva::{ModelKind, Prediction, STEPS};
 
 pub struct Renderer<'a> {
     lenient: bool,
@@ -95,7 +97,7 @@ impl<'a> Renderer<'a> {
 pub struct Info<'a> {
     dataset: &'a str,
     age: Minutes,
-    kind: chuva::ModelKind,
+    kind: ModelKind,
     status: &'static str,
 }
 
@@ -409,7 +411,7 @@ struct Marker(usize);
 
 impl std::fmt::Display for Marker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..chuva::STEPS {
+        for i in 0..STEPS {
             if i == self.0 {
                 f.write_char('^')?;
             } else {

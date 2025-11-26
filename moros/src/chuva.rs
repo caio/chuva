@@ -3,21 +3,33 @@ use std::path::Path;
 use fst::{Automaton, IntoStreamer, Streamer};
 use jiff::Timestamp;
 
-use chuva::{Chuva, ModelKind, Prediction, STEPS};
+use chuva::{MAX_OFFSET, Model, Projector, STEPS};
 
 type Result<T> = crate::Result<T>;
 
+pub type Prediction<'a> = &'a [f32; STEPS];
+
 pub struct Moros {
-    chuva: Chuva,
+    model: Model,
+    proj: Projector,
     fst: fst::Map<&'static [u8]>,
 }
 
 impl Moros {
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self> {
-        let model = Chuva::load_from_dir(dir)?;
+        let model = Model::load_from_dir(dir)?;
         let fst = fst::Map::new(FST_STATE)?;
 
-        Ok(Self { fst, chuva: model })
+        Ok(Self {
+            proj: Projector::new(),
+            fst,
+            model,
+        })
+    }
+
+    pub fn by_lat_lon(&self, lat: f64, lon: f64) -> Option<Prediction<'_>> {
+        let offset = self.proj.to_offset(lat, lon)?;
+        self.by_offset(offset)
     }
 
     pub fn by_postcode(&self, code: &str) -> Option<Prediction<'_>> {
@@ -26,7 +38,7 @@ impl Moros {
             .search(AsciiUpperCase::new(code).starts_with())
             .into_stream();
         let (_, offset) = stream.next()?;
-        self.chuva.by_offset(offset as usize)
+        self.by_offset(offset as usize)
     }
 
     pub fn by_postcode4(&self, code: &str) -> Option<Prediction<'_>> {
@@ -34,34 +46,36 @@ impl Moros {
         let (key, offset) = stream.next()?;
         assert_eq!(6, key.len(), "key is pc6");
         if &key[..4] == code.as_bytes() {
-            self.chuva.by_offset(offset as usize)
+            self.by_offset(offset as usize)
         } else {
             None
         }
     }
 
-    pub fn by_lat_lon(&self, lat: f64, lon: f64) -> Option<Prediction<'_>> {
-        self.chuva.by_lat_lon(lat, lon)
-    }
-
-    pub fn by_offset(&self, offset: usize) -> Option<Prediction<'_>> {
-        self.chuva.by_offset(offset)
+    #[inline]
+    pub(crate) fn by_offset(&self, offset: usize) -> Option<Prediction<'_>> {
+        assert!(offset <= MAX_OFFSET);
+        Some(
+            self.model.data[offset..(offset + STEPS)]
+                .try_into()
+                .unwrap(),
+        )
     }
 
     pub fn created_at(&self) -> Timestamp {
-        self.chuva.created_at
+        self.model.created_at
     }
 
     pub fn filename(&self) -> &str {
-        &self.chuva.filename
+        &self.model.filename
     }
 
-    pub fn kind(&self) -> ModelKind {
-        self.chuva.kind
+    pub fn kind(&self) -> chuva::ModelKind {
+        self.model.kind
     }
 
     pub fn get_time_slot(&self, now: Timestamp) -> Result<usize> {
-        get_time_slot(self.chuva.created_at, now).map_err(|_| "Dataset too old".into())
+        get_time_slot(self.model.created_at, now).map_err(|_| "Dataset too old".into())
     }
 }
 
@@ -78,47 +92,6 @@ fn get_time_slot(created_at: Timestamp, now: Timestamp) -> std::result::Result<u
         let slot = (age / 5.0) as usize;
         assert!(slot < STEPS);
         Ok(slot)
-    }
-}
-
-struct AsciiUpperCase<'a> {
-    input: &'a [u8],
-}
-
-impl<'a> AsciiUpperCase<'a> {
-    fn new(input: &'a str) -> Self {
-        Self {
-            input: input.as_bytes(),
-        }
-    }
-}
-
-impl<'a> fst::Automaton for AsciiUpperCase<'a> {
-    type State = Option<usize>;
-
-    #[inline]
-    fn start(&self) -> Self::State {
-        Some(0)
-    }
-
-    #[inline]
-    fn is_match(&self, state: &Self::State) -> bool {
-        *state == Some(self.input.len())
-    }
-
-    #[inline]
-    fn can_match(&self, pos: &Self::State) -> bool {
-        pos.is_some()
-    }
-
-    #[inline]
-    fn accept(&self, state: &Self::State, byte: u8) -> Self::State {
-        let pos = (*state)?;
-        // The keys in the FST are in upper case.
-        // We want a case-insensitive match and to_ascii_uppercase
-        // does the right thing for bytes outside the lower case range
-        let current = self.input.get(pos).map(|b| b.to_ascii_uppercase())?;
-        if current == byte { Some(pos + 1) } else { None }
     }
 }
 

@@ -288,7 +288,7 @@ impl From<Token> for Expr {
 #[cfg(test)]
 mod tests {
     use super::{Expr, Lexer, Token, Tokenizer};
-    use crate::moros::Prediction;
+    use chuva::Prediction;
 
     fn iter_tokens(pos: usize, preds: &[f32]) -> impl Iterator<Item = Token> {
         Tokenizer::new(pos, preds)

@@ -2,20 +2,23 @@ use std::path::{Path, PathBuf};
 
 use jiff::Timestamp;
 
-use crate::{HEIGHT, STEPS, WIDTH};
+use crate::{HEIGHT, MAX_OFFSET, STEPS, WIDTH};
 
 pub type Dataset = Box<[f32; STEPS * HEIGHT * WIDTH]>;
 
+pub type Prediction<'a> = &'a [f32; STEPS];
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Sync + Send>>;
 
-pub struct Model {
+pub struct Chuva {
     pub kind: ModelKind,
     pub created_at: Timestamp,
     pub filename: String,
     pub data: Dataset,
+    pub proj: crate::Projector,
 }
 
-impl std::fmt::Debug for Model {
+impl std::fmt::Debug for Chuva {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Model")
             .field("kind", &self.kind)
@@ -25,7 +28,7 @@ impl std::fmt::Debug for Model {
     }
 }
 
-impl Model {
+impl Chuva {
     pub fn load<P: AsRef<Path>>(file: P) -> Result<Self> {
         let kind = ModelKind::guess(&file).ok_or("Model kind not recognized")?;
         let filename = file
@@ -44,12 +47,24 @@ impl Model {
             filename,
             created_at,
             data,
+            proj: crate::Projector::new(),
         })
     }
 
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self> {
         let file = most_recent_data_file(dir, None)?;
         Self::load(file)
+    }
+
+    pub fn by_lat_lon(&self, lat: f64, lon: f64) -> Option<Prediction<'_>> {
+        let offset = self.proj.to_offset(lat, lon)?;
+        self.by_offset(offset)
+    }
+
+    #[inline]
+    pub fn by_offset(&self, offset: usize) -> Option<Prediction<'_>> {
+        assert!(offset.is_multiple_of(STEPS) && offset <= MAX_OFFSET);
+        Some(self.data[offset..(offset + STEPS)].try_into().unwrap())
     }
 }
 
@@ -89,9 +104,9 @@ impl ModelKind {
         }
     }
 
-    pub fn load_from_dir<P: AsRef<Path>>(&self, dir: P) -> Result<Model> {
+    pub fn load_from_dir<P: AsRef<Path>>(&self, dir: P) -> Result<Chuva> {
         let file = most_recent_data_file(dir, Some(*self))?;
-        Model::load(file)
+        Chuva::load(file)
     }
 
     fn load_predictions<P: AsRef<Path>>(&self, file: P) -> Result<Dataset> {

@@ -17,7 +17,7 @@ mod ui;
 mod util;
 
 mod moros;
-use moros::{Moros, Prediction};
+use moros::Moros;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -29,9 +29,9 @@ enum View<'a> {
     App,
     Manifest,
     Logo(Logo),
-    Postcode(&'a str, Prediction<'a>),
+    Postcode(&'a str, chuva::Prediction<'a>),
     BadPostcode,
-    Coords(f64, f64, Prediction<'a>),
+    Coords(f64, f64, chuva::Prediction<'a>),
     BadCoords,
     NotFound,
 }
@@ -115,7 +115,7 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
             return Ok(Response::new(body.into()));
         }
         View::Demo => {
-            let preds: Prediction<'static> = &[
+            let preds: chuva::Prediction<'static> = &[
                 0.48, 0.84, 0.0, 1.92, 4.32, 5.52, 2.76, 0.12, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 0.0, 0.0, 0.0, 0.12, 1.56, 3.24, 1.92, 0.24, 0.0, 0.0,
             ];
