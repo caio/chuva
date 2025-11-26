@@ -7,7 +7,7 @@ edition = "2024"
 regen = ["dep:tinyjson"]
 
 [dependencies]
-chuva = { version = "0.1.0", default-features = false, features = ["load"], path = "../chuva" }
+chuva = { version = "0.1.0", default-features = false, path = "../chuva" }
 caveman = { version = "0.1.0", default-features = false, path = "../caveman" }
 
 jiff = { workspace = true }
