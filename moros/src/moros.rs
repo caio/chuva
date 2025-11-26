@@ -14,10 +14,10 @@ pub struct Moros {
 
 impl Moros {
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self> {
-        let model = Chuva::load_from_dir(dir)?;
+        let chuva = Chuva::load_from_dir(dir)?;
         let fst = fst::Map::new(FST_STATE)?;
 
-        Ok(Self { fst, chuva: model })
+        Ok(Self { fst, chuva })
     }
 
     pub fn by_postcode(&self, code: &str) -> Option<Prediction<'_>> {

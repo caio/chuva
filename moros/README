@@ -7,3 +7,8 @@ DEVELOP
 PLAY
 
    cargo run -- cli /path/to/dataset-dir <POSTCODE|OFFSET|<LATITUDE LONGITUDE>>
+
+REGEN POSTCODE FST
+
+   # data at https://github.com/caio/netherlands-postcode-geojson
+   cargo run --release --features regen --example postcode_fst /path/to/netherlands-postcode-geojson/pc6

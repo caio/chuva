@@ -1,3 +1,17 @@
+// Very dirty "script" that outputs the fst used by moros
+//
+// It crawls the `pc6` directory from https://github.com/caio/netherlands-postcode-geojson
+// and generates what's essentially a `Map<String, u64>` that's used to access the
+// precipitation predictions
+//
+// Naively one could fit the 465200 postcode-offset pairs with 10 bytes per entry (6 for
+// the postcode, 32bit offset), which leads to ~4.5M of data that one could efficiently
+// binary_search into.
+//
+// With this trie it shrinks to ~1.8M, still gives really good exact-key search AND a
+// very easy/performant way to do prefix searches
+//
+// The resulting postcodes.fst file is directly included in the binary via include_bytes!()
 use std::{collections::HashMap, fs, io};
 
 use fst::MapBuilder;
@@ -43,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let (lat, lon) = read_point_from_geom(&geoj["geometry"])?;
             let offset = proj.to_offset(lat, lon).expect("valid NL lat/lon");
 
-            values.push((name.clone(), offset));
+            values.push((name.to_ascii_uppercase(), offset));
         }
         println!("Done with {pc2:?}");
     }
