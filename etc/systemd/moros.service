@@ -3,7 +3,7 @@ Description=moros
 Requires=moros.socket
 
 [Service]
-ExecStart=/opt/caio.co/bin/chuva serve /opt/caio.co/data/knmi/
+ExecStart=/opt/caio.co/bin/moros serve /opt/caio.co/data/knmi/
 Restart=always
 
 [Install]

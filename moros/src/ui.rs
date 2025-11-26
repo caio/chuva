@@ -5,23 +5,23 @@ use jiff::{Span, Timestamp, civil::DateTime, tz::TimeZone};
 
 use crate::{
     Result,
-    chuva::{Chuva, Prediction},
     interpreter::{Expr, Lexer},
+    moros::{Moros, Prediction},
 };
 
 pub struct Renderer<'a> {
     lenient: bool,
     plain_text: bool,
-    chuva: &'a Chuva,
+    moros: &'a Moros,
     tz: &'a TimeZone,
 }
 
 impl<'a> Renderer<'a> {
-    pub fn new(chuva: &'a Chuva, tz: &'a TimeZone) -> Self {
+    pub fn new(moros: &'a Moros, tz: &'a TimeZone) -> Self {
         Self {
             lenient: false,
             plain_text: true,
-            chuva,
+            moros,
             tz,
         }
     }
@@ -39,11 +39,11 @@ impl<'a> Renderer<'a> {
     pub fn render_into<W: std::fmt::Write>(&self, preds: Prediction, mut writer: W) -> Result<()> {
         let mut now = Timestamp::now();
 
-        let slot = match self.chuva.get_time_slot(now) {
+        let slot = match self.moros.get_time_slot(now) {
             Ok(slot) => slot,
             Err(err) if self.lenient => {
                 eprintln!("WARNING: {err}: Using the datafile epoch as current time");
-                now = self.chuva.created_at();
+                now = self.moros.created_at();
                 0
             }
             Err(err) => return Err(err),
@@ -68,7 +68,7 @@ impl<'a> Renderer<'a> {
 
         if self.plain_text {
             let tmpl = PredictionTxt::new(
-                self.tz.to_datetime(self.chuva.created_at()),
+                self.tz.to_datetime(self.moros.created_at()),
                 self.tz.to_datetime(now),
                 slot,
                 preds,
@@ -78,7 +78,7 @@ impl<'a> Renderer<'a> {
         }
 
         let tmpl = PredictionHtml::new(
-            self.tz.to_datetime(self.chuva.created_at()),
+            self.tz.to_datetime(self.moros.created_at()),
             self.tz.to_datetime(now),
             slot,
             preds,
@@ -100,11 +100,11 @@ pub struct Info<'a> {
 }
 
 impl<'a> Info<'a> {
-    pub fn new(chuva: &'a Chuva) -> Self {
+    pub fn new(moros: &'a Moros) -> Self {
         let now = Timestamp::now();
 
         let age = Minutes(
-            (now - chuva.created_at())
+            (now - moros.created_at())
                 .total(jiff::Unit::Minute)
                 .unwrap_or(420.69),
         );
@@ -117,13 +117,13 @@ impl<'a> Info<'a> {
             "Dataset too old"
         };
 
-        let dataset = chuva.filename();
+        let dataset = moros.filename();
 
         Self {
             age,
             dataset,
             status,
-            kind: chuva.kind(),
+            kind: moros.kind(),
         }
     }
 

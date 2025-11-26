@@ -9,13 +9,13 @@ type Result<T> = crate::Result<T>;
 
 pub type Prediction<'a> = &'a [f32; STEPS];
 
-pub struct Chuva {
+pub struct Moros {
     model: Model,
     proj: Projector,
     fst: fst::Map<&'static [u8]>,
 }
 
-impl Chuva {
+impl Moros {
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self> {
         let model = Model::load_from_dir(dir)?;
         let fst = fst::Map::new(FST_STATE)?;

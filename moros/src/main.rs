@@ -16,8 +16,8 @@ mod interpreter;
 mod ui;
 mod util;
 
-mod chuva;
-use chuva::{Chuva, Prediction};
+mod moros;
+use moros::{Moros, Prediction};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -55,7 +55,7 @@ impl Logo {
     }
 }
 
-fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
+fn route<'a>(req: &'a Request, moros: &'a Moros) -> View<'a> {
     if req.method() != Method::GET {
         return View::NotFound;
     }
@@ -76,7 +76,7 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
             let (_, coords) = path.split_at(2);
             util::latlon_from_path(coords)
                 .and_then(|(lat, lon)| {
-                    chuva
+                    moros
                         .by_lat_lon(lat, lon)
                         .map(|preds| View::Coords(lat, lon, preds))
                 })
@@ -85,7 +85,7 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
         // /<6-digit-postcode>
         path if path.len() == 7 => {
             let (_, code) = path.split_at(1);
-            chuva
+            moros
                 .by_postcode(code)
                 .map(|preds| View::Postcode(code, preds))
                 .unwrap_or(View::BadPostcode)
@@ -93,7 +93,7 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
         // /<4-digit-postcode>
         path if path.len() == 5 => {
             let (_, code) = path.split_at(1);
-            chuva
+            moros
                 .by_postcode4(code)
                 .map(|preds| View::Postcode(code, preds))
                 .unwrap_or(View::BadPostcode)
@@ -103,7 +103,7 @@ fn route<'a>(req: &'a Request, chuva: &'a Chuva) -> View<'a> {
 }
 
 fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
-    let (preds, lenient) = match route(&req, &state.chuva) {
+    let (preds, lenient) = match route(&req, &state.moros) {
         View::Index => {
             let mut body = BytesMut::new();
             ui::Index::render_into(&mut body)?;
@@ -111,7 +111,7 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
         }
         View::Info => {
             let mut body = BytesMut::new();
-            ui::Info::new(&state.chuva).render_into(&mut body)?;
+            ui::Info::new(&state.moros).render_into(&mut body)?;
             return Ok(Response::new(body.into()));
         }
         View::Demo => {
@@ -163,7 +163,7 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
         }
     };
 
-    let renderer = ui::Renderer::new(&state.chuva, &state.tz)
+    let renderer = ui::Renderer::new(&state.moros, &state.tz)
         .plain_text(util::wants_plaintext(&req))
         .lenient(lenient);
 
@@ -177,18 +177,18 @@ fn render(req: Request, state: &State) -> Result<Response<BodyBytes>> {
 }
 
 struct State {
-    chuva: Chuva,
+    moros: Moros,
     tz: TimeZone,
 }
 
-fn async_main(chuva: Chuva) -> Result<()> {
+fn async_main(moros: Moros) -> Result<()> {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()
         .build()?;
 
     let tz = TimeZone::get("Europe/Amsterdam")?;
-    let state = Arc::new(State { chuva, tz });
+    let state = Arc::new(State { moros, tz });
 
     let service = service_fn(move |req: Request| {
         let state = Arc::clone(&state);
@@ -245,32 +245,32 @@ fn main() -> Result<()> {
 
     let dir = args.next().expect("dir path first arg");
     let start = SystemTime::now();
-    let chuva = Chuva::load_from_dir(dir)?;
+    let moros = Moros::load_from_dir(dir)?;
     eprintln!("load in {}s", start.elapsed()?.as_secs_f32());
 
     if is_server {
-        return async_main(chuva);
+        return async_main(moros);
     }
 
     let preds = if let Some(code) = args.next() {
         if args.len() > 0 {
             let lat: f64 = code.parse()?;
             let lon: f64 = args.next().unwrap().parse()?;
-            chuva.by_lat_lon(lat, lon)
+            moros.by_lat_lon(lat, lon)
         } else {
-            chuva.by_postcode(&code).or_else(|| {
+            moros.by_postcode(&code).or_else(|| {
                 code.parse::<usize>()
                     .ok()
-                    .and_then(|offset| chuva.by_offset(offset))
+                    .and_then(|offset| moros.by_offset(offset))
             })
         }
     } else {
-        chuva.by_lat_lon(52.325, 4.873)
+        moros.by_lat_lon(52.325, 4.873)
     };
 
     if let Some(preds) = preds {
         let tz = TimeZone::get("Europe/Amsterdam")?;
-        let renderer = ui::Renderer::new(&chuva, &tz)
+        let renderer = ui::Renderer::new(&moros, &tz)
             .plain_text(true)
             .lenient(true);
         renderer.render_into(preds, util::FmtStdout::new())?;

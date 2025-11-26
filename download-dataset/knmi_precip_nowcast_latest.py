@@ -112,12 +112,12 @@ def main():
         logger.info(f"Deleting old dataset {file}")
         os.remove(file)
 
-    logger.info("Killing chuva process")
+    logger.info("Killing moros process")
     res = subprocess.run(
-        "/bin/sh -c 'kill -TERM $(pidof chuva)'", shell=True, capture_output=True
+        "/bin/sh -c 'kill -TERM $(pidof moros)'", shell=True, capture_output=True
     )
     if res.returncode != 0:
-        logger.error("Failed to kill chuva: %s", res.stderr)
+        logger.error("Failed to kill moros: %s", res.stderr)
 
     logger.info("Done")
 
