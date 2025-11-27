@@ -7,3 +7,6 @@ edition = "2024"
 jiff = { workspace = true }
 proj4rs = { version = "0.1.9", default-features = false }
 netcdf = { version = "0.11.1", default-features = false, features = ["static"] }
+
+[[bin]]
+name = "diff"
