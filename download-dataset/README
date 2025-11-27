@@ -2,11 +2,9 @@ This is the example python code:
 
    https://developer.dataplatform.knmi.nl/open-data-api#example-last
 
-Made to point at the radar-forecast dataset:
-
-   https://dataplatform.knmi.nl/dataset/radar-forecast-2-0
-
 With a few modifications so I can use it as a cronjob. Namely:
+
+ - Takes dataset name/version from args
 
  - Reads the api key from systemd-creds if available. Falls back
    to env API_TOKEN for easier debugging
@@ -14,3 +12,5 @@ With a few modifications so I can use it as a cronjob. Namely:
  - Doesn't download existing files
 
  - Deletes old files
+
+ - Tries to kill -TERM a given service

@@ -5,6 +5,6 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=python3 /opt/caio.co/bin/knmi_precip_nowcast_latest.py /opt/caio.co/data/knmi/
+ExecStart=python3 /opt/caio.co/bin/knmi_precip_nowcast_latest.py radar_forecast 2.0 /opt/caio.co/data/knmi/ moros
 # Get a token here https://developer.dataplatform.knmi.nl/open-data-api#token
 SetCredential=api:YOUR_API_TOKEN

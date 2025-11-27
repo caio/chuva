@@ -70,15 +70,41 @@ def get_api_key():
     sys.exit(1)
 
 
+def restart_service(svc):
+    logger.info("Restarting %s", svc)
+    res = subprocess.run(
+        f"systemctl show --property MainPID --value {svc}.service",
+        shell=True,
+        capture_output=True,
+    )
+    if res.returncode != 0:
+        logger.error("Unable to find PID for %s: %s", svc, res.stderr)
+        return
+
+    pid = int(res.stdout)
+    # great footgun eh
+    if pid == 0:
+        logger.info("Service %s not running", svc)
+        return
+
+    res = subprocess.run(f"kill -TERM {pid}", shell=True, capture_output=True)
+    if res.returncode != 0:
+        logger.error("Unable to kill PID %d for %s: %s", pid, svc, res.stderr)
+        return
+
+
 def main():
-    if len(sys.argv) != 2:
-        logger.error(f"usage: {sys.argv[0]} <DOWNLOAD_DIR>")
+    if len(sys.argv) != 5:
+        logger.error(
+            f"usage: {sys.argv[0]} <DATASET_NAME> <DATASET_VERSION> <DOWNLOAD_DIR> <SERVICE>"
+        )
         sys.exit(1)
-    download_dir = sys.argv[1]
+    dataset_name = sys.argv[1]
+    dataset_version = sys.argv[2]
+    download_dir = sys.argv[3]
+    svc = sys.argv[4]
 
     api_key = get_api_key()
-    dataset_name = "radar_forecast"
-    dataset_version = "2.0"
     logger.info(f"Fetching latest file of {dataset_name} version {dataset_version}")
 
     api = OpenDataAPI(api_token=api_key)
@@ -112,13 +138,7 @@ def main():
         logger.info(f"Deleting old dataset {file}")
         os.remove(file)
 
-    logger.info("Killing moros process")
-    res = subprocess.run(
-        "/bin/sh -c 'kill -TERM $(pidof moros)'", shell=True, capture_output=True
-    )
-    if res.returncode != 0:
-        logger.error("Failed to kill moros: %s", res.stderr)
-
+    restart_service(svc)
     logger.info("Done")
 
 
