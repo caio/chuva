@@ -89,13 +89,12 @@ impl std::fmt::Debug for Chuva {
 }
 
 impl Chuva {
-    pub fn load<P: AsRef<Path>>(file: P) -> Result<Self> {
-        let kind = ModelKind::guess(&file).ok_or("Model kind not recognized")?;
+    pub fn load_kind<P: AsRef<Path>>(file: P, kind: ModelKind) -> Result<Self> {
         let filename = file
             .as_ref()
             .file_name()
             .map(|name| name.to_string_lossy().into_owned())
-            .expect("guess() would fail if this wasn't an actual file");
+            .ok_or("No filename")?;
         let created_at = jiff::fmt::strtime::parse(kind.timestamp_mask(), &filename)?
             .to_datetime()?
             .in_tz("UTC")?
@@ -109,6 +108,11 @@ impl Chuva {
             data,
             proj: crate::Projector::new(),
         })
+    }
+
+    pub fn load<P: AsRef<Path>>(file: P) -> Result<Self> {
+        let kind = ModelKind::guess(&file).ok_or("Model kind not recognized")?;
+        Self::load_kind(file, kind)
     }
 
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self> {
@@ -131,14 +135,22 @@ impl Chuva {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ModelKind {
     Simple,
+    #[cfg(feature = "debug")]
+    SimpleNdarray,
     Ensemble,
+    #[cfg(feature = "debug")]
+    EnsembleNdarray,
 }
 
 impl std::fmt::Display for ModelKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ModelKind::Simple => f.write_str("Simple"),
+            #[cfg(feature = "debug")]
+            ModelKind::SimpleNdarray => f.write_str("SimpleNdarray"),
             ModelKind::Ensemble => f.write_str("Ensemble"),
+            #[cfg(feature = "debug")]
+            ModelKind::EnsembleNdarray => f.write_str("EnsembleNdarray"),
         }
     }
 }
@@ -147,7 +159,11 @@ impl ModelKind {
     fn timestamp_mask(&self) -> &'static str {
         match self {
             ModelKind::Simple => "RAD_NL25_RAC_FM_%Y%m%d%H%M.h5",
+            #[cfg(feature = "debug")]
+            ModelKind::SimpleNdarray => "RAD_NL25_RAC_FM_%Y%m%d%H%M.h5",
             ModelKind::Ensemble => "KNMI_PYSTEPS_BLEND_ENS_%Y%m%d%H%M.nc",
+            #[cfg(feature = "debug")]
+            ModelKind::EnsembleNdarray => "KNMI_PYSTEPS_BLEND_ENS_%Y%m%d%H%M.nc",
         }
     }
 
@@ -172,7 +188,11 @@ impl ModelKind {
     fn load_predictions<P: AsRef<Path>>(&self, file: P) -> Result<Dataset> {
         match self {
             ModelKind::Simple => load(file),
+            #[cfg(feature = "debug")]
+            ModelKind::SimpleNdarray => load_with_ndarray(file),
             ModelKind::Ensemble => load_ensemble_dataset(file),
+            #[cfg(feature = "debug")]
+            ModelKind::EnsembleNdarray => load_ensemble_with_ndarray(file),
         }
     }
 }
@@ -247,6 +267,118 @@ fn load<P: AsRef<std::path::Path>>(path: P) -> Result<Dataset> {
     load("image23", 22)?;
     load("image24", 23)?;
     load("image25", 24)?;
+
+    Ok(data
+        .into_boxed_slice()
+        .try_into()
+        .expect("exact dimensions"))
+}
+
+#[cfg(feature = "debug")]
+fn load_with_ndarray<P: AsRef<std::path::Path>>(path: P) -> Result<Dataset> {
+    let mut data = vec![0f32; STEPS * HEIGHT * WIDTH];
+
+    // metadata docs:
+    // https://www.knmi.nl/kennis-en-datacentrum/publicatie/knmi-hdf5-data-format-specification-v3-5
+    let file = netcdf::open(path.as_ref())?;
+
+    // hdf5 /imageK/image_bytes_per_pixel is 2
+    use ndarray::Array2;
+    let mut buf = Array2::<u16>::zeros((HEIGHT, WIDTH));
+    let mut load = |name, z: usize| -> netcdf::Result<()> {
+        let group = file
+            .group(name)?
+            .ok_or_else(|| netcdf::Error::from(format!("{name} not found")))?;
+        let image = group.variable("image_data").ok_or_else(|| {
+            netcdf::Error::from(format!("group {name} doesn't contain `image_data` var"))
+        })?;
+        image.get_into(buf.view_mut(), ..)?;
+
+        for (idx, value) in buf.iter().copied().enumerate() {
+            // `* 0.01` hdf5 /imageX/calibration/calibration_formula
+            // `* 12` to convert from 5min to 1h
+            let mmhr = f32::from(value) * 0.01 * 12f32;
+            let offset = (idx * STEPS) + z;
+            data[offset] = mmhr;
+        }
+
+        Ok(())
+    };
+
+    load("image1", 0)?;
+    load("image2", 1)?;
+    load("image3", 2)?;
+    load("image4", 3)?;
+    load("image5", 4)?;
+    load("image6", 5)?;
+    load("image7", 6)?;
+    load("image8", 7)?;
+    load("image9", 8)?;
+    load("image10", 9)?;
+    load("image11", 10)?;
+    load("image12", 11)?;
+    load("image13", 12)?;
+    load("image14", 13)?;
+    load("image15", 14)?;
+    load("image16", 15)?;
+    load("image17", 16)?;
+    load("image18", 17)?;
+    load("image19", 18)?;
+    load("image20", 19)?;
+    load("image21", 20)?;
+    load("image22", 21)?;
+    load("image23", 22)?;
+    load("image24", 23)?;
+    load("image25", 24)?;
+
+    Ok(data
+        .into_boxed_slice()
+        .try_into()
+        .expect("exact dimensions"))
+}
+
+#[cfg(feature = "debug")]
+fn load_ensemble_with_ndarray<P: AsRef<std::path::Path>>(path: P) -> Result<Dataset> {
+    let file = netcdf::open(path.as_ref())?;
+    let mut data = vec![0f32; STEPS * HEIGHT * WIDTH];
+
+    let precip = file
+        .variable("precip_intensity")
+        .ok_or("Variable precip_intensity doesn't exist")?;
+    assert_eq!(4, precip.dimensions().len());
+
+    const ENS_SIZE: usize = 20;
+    use ndarray::Array3;
+    let mut buf = Array3::<u16>::zeros((ENS_SIZE, HEIGHT, WIDTH));
+
+    // XXX This dataset gives predictions for up to 6h ahead, but
+    //     I'm mostly interested in the next 2h (what the nowcast
+    for time in 0..STEPS {
+        let selector: netcdf::Extents = (
+            ..,   // every model output
+            time, // for this specific time slot
+            ..,   // whole height
+            ..,   // whole width
+        )
+            .try_into()
+            .expect("valid extents spec");
+        precip.get_into(buf.view_mut(), selector)?;
+
+        // FIXME getfattr zomgwtfbbq
+        //       https://github.com/Unidata/netcdf-c/blob/6038ed2c4b8f53fbe38792d65cfca983c6c08907/libdispatch/dinfermodel.c#L1619
+        let mut ens_members = [0u16; ENS_SIZE];
+        for x in 0..WIDTH {
+            for y in 0..HEIGHT {
+                for z in 0..ENS_SIZE {
+                    ens_members[z] = buf[[z, y, x]];
+                    buf.get([z, y, x]);
+                }
+                ens_members.sort_unstable();
+                let offset = (x * WIDTH + y) * STEPS + time;
+                data[offset] = f32::from(ens_members[13]) * 0.01;
+            }
+        }
+    }
 
     Ok(data
         .into_boxed_slice()
