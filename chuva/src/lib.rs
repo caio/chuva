@@ -280,25 +280,22 @@ fn load_ensemble_dataset<P: AsRef<std::path::Path>>(path: P) -> Result<Dataset> 
             .expect("valid extents spec");
         precip.get_values_into(&mut buf, selector)?;
 
-        // FIXME Is this not laid out how I think it is?
-        //       I'm finding it difficult to compare with the
-        //       smaller model
         // FIXME getfattr zomgwtfbbq
         //       https://github.com/Unidata/netcdf-c/blob/6038ed2c4b8f53fbe38792d65cfca983c6c08907/libdispatch/dinfermodel.c#L1619
-        //
-        // Each chunk contains the 20 different model predictions for
-        // the current `time` slice
-        let (chunks, remainder) = buf[..].as_chunks_mut::<ENS_SIZE>();
-        assert!(remainder.is_empty());
-        for (idx, chunk) in chunks.iter_mut().enumerate() {
-            // The simplest way to choose which of the outputs to use
-            // is getting the median value. My VUA decided to bias
-            // for rain (i.e.: I'd rather it tells me that it's gonna
-            // rain but it doesn't instead of the other way around),
-            // so I'm using the 70th percentile
-            chunk.sort_unstable();
-            let offset = (idx * STEPS) + time;
-            data[offset] = f32::from(chunk[13]) * 0.01;
+        let mut ens_members = [0u16; ENS_SIZE];
+        for x in 0..WIDTH {
+            for y in 0..HEIGHT {
+                // Passing this lint makes the code look worse. z is
+                // used to compute the offset, not just for indexing
+                #[expect(clippy::needless_range_loop)]
+                for z in 0..ENS_SIZE {
+                    let offset = z * WIDTH * HEIGHT + y * WIDTH + x;
+                    ens_members[z] = buf[offset];
+                }
+                ens_members.sort_unstable();
+                let offset = (x * WIDTH + y) * STEPS + time;
+                data[offset] = f32::from(ens_members[13]) * 0.01;
+            }
         }
     }
 
