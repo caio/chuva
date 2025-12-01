@@ -6,7 +6,6 @@ var lastTick = Date.now();
 function initApp() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === "hidden") {
-            lastTick = Date.now();
             if (typeof tickerId !== "undefined") {
                 clearTimeout(tickerId);
                 tickerId = undefined;
@@ -35,6 +34,7 @@ function tick(delay) {
                 if (typeof error !== "undefined") {
                     setError(error);
                 } else {
+                    lastTick = Date.now();
                     tick(tickDelay);
                 }
             });
