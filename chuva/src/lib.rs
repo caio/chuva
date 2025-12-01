@@ -283,8 +283,7 @@ fn load_with_ndarray<P: AsRef<std::path::Path>>(path: P) -> Result<Dataset> {
     let file = netcdf::open(path.as_ref())?;
 
     // hdf5 /imageK/image_bytes_per_pixel is 2
-    use ndarray::Array2;
-    let mut buf = Array2::<u16>::zeros((HEIGHT, WIDTH));
+    let mut buf = ndarray::Array2::<u16>::zeros((HEIGHT, WIDTH));
     let mut load = |name, z: usize| -> netcdf::Result<()> {
         let group = file
             .group(name)?
@@ -348,8 +347,7 @@ fn load_ensemble_with_ndarray<P: AsRef<std::path::Path>>(path: P) -> Result<Data
     assert_eq!(4, precip.dimensions().len());
 
     const ENS_SIZE: usize = 20;
-    use ndarray::Array3;
-    let mut buf = Array3::<u16>::zeros((ENS_SIZE, HEIGHT, WIDTH));
+    let mut buf = ndarray::Array3::<u16>::zeros((ENS_SIZE, HEIGHT, WIDTH));
 
     // XXX This dataset gives predictions for up to 6h ahead, but
     //     I'm mostly interested in the next 2h (what the nowcast
