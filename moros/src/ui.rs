@@ -92,6 +92,8 @@ impl<'a> Renderer<'a> {
     }
 }
 
+const VERSION: Option<&str> = option_env!("GIT_VERSION");
+
 #[derive(Template)]
 #[template(path = "info.html.jinja")]
 pub struct Info<'a> {
@@ -99,6 +101,7 @@ pub struct Info<'a> {
     age: Minutes,
     kind: ModelKind,
     status: &'static str,
+    version: &'static str,
 }
 
 impl<'a> Info<'a> {
@@ -126,6 +129,7 @@ impl<'a> Info<'a> {
             dataset,
             status,
             kind: moros.kind(),
+            version: VERSION.unwrap_or("Unknown"),
         }
     }
 
