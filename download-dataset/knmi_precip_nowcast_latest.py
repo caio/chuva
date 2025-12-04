@@ -130,8 +130,9 @@ def main():
 
     # data files by most-recent-first
     # lexy sort is enough due to the naming convention
+    pattern = "{}*".format(latest_file.rsplit("_", 1)[0])
     datasets = sorted(
-        glob(os.path.join(download_dir, "RAD_NL25_RAC_FM_*.h5")), reverse=True
+        glob(os.path.join(download_dir, pattern)), reverse=True
     )
     # keep a 2h window of datafiles (a new one every 5min)
     for file in datasets[24:]:
