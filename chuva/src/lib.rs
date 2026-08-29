@@ -282,7 +282,9 @@ fn load_ensemble_dataset<P: AsRef<std::path::Path>>(path: P) -> Result<Dataset> 
         )
             .try_into()
             .expect("valid extents spec");
-        precip.get_values_into(&mut buf, selector)?;
+        precip
+            .get_values_into(&mut buf, selector)
+            .map_err(|err| format!("get_values_into failed for time={time}: {err}"))?;
 
         // FIXME getfattr zomgwtfbbq
         //       https://github.com/Unidata/netcdf-c/blob/6038ed2c4b8f53fbe38792d65cfca983c6c08907/libdispatch/dinfermodel.c#L1619
