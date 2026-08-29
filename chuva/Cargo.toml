@@ -14,7 +14,3 @@ ndarray = { version = "0.17.1", optional = true }
 
 [[bin]]
 name = "diff"
-
-[[bin]]
-name = "check"
-required-features = ["debug"]
