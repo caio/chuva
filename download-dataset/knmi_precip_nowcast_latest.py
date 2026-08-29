@@ -1,8 +1,7 @@
 import logging
 import os
-import sys
 import subprocess
-
+import sys
 from glob import glob
 
 import requests
@@ -41,8 +40,7 @@ def download_file_from_temporary_download_url(download_url, filename):
             # with a .h5 ext
             partial = f"{filename}.downloading"
             with open(partial, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                f.writelines(r.iter_content(chunk_size=8192))
             os.rename(partial, filename)
     except Exception:
         logger.exception("Unable to download file using download URL")
@@ -76,6 +74,7 @@ def restart_service(svc):
         f"systemctl show --property MainPID --value {svc}.service",
         shell=True,
         capture_output=True,
+        check=False,
     )
     if res.returncode != 0:
         logger.error("Unable to find PID for %s: %s", svc, res.stderr)
@@ -87,7 +86,7 @@ def restart_service(svc):
         logger.info("Service %s not running", svc)
         return
 
-    res = subprocess.run(f"kill -TERM {pid}", shell=True, capture_output=True)
+    res = subprocess.run(f"kill -TERM {pid}", shell=True, capture_output=True, check=False)
     if res.returncode != 0:
         logger.error("Unable to kill PID %d for %s: %s", pid, svc, res.stderr)
         return
