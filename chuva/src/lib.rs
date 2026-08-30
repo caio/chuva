@@ -291,12 +291,9 @@ fn load_ensemble_dataset<P: AsRef<std::path::Path>>(path: P) -> Result<Dataset> 
         let mut ens_members = [0u16; ENS_SIZE];
         for x in 0..WIDTH {
             for y in 0..HEIGHT {
-                // Passing this lint makes the code look worse. z is
-                // used to compute the offset, not just for indexing
-                #[expect(clippy::needless_range_loop)]
-                for z in 0..ENS_SIZE {
+                for (z, member) in ens_members.iter_mut().enumerate() {
                     let offset = z * WIDTH * HEIGHT + y * WIDTH + x;
-                    ens_members[z] = buf[offset];
+                    *member = buf[offset];
                 }
                 ens_members.sort_unstable();
                 let offset = (x * WIDTH + y) * STEPS + time;
