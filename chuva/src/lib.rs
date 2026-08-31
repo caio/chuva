@@ -75,7 +75,7 @@ pub struct Chuva {
     pub created_at: Timestamp,
     pub filename: String,
     pub data: Dataset,
-    pub proj: crate::Projector,
+    pub proj: Projector,
 }
 
 impl std::fmt::Debug for Chuva {
@@ -106,7 +106,7 @@ impl Chuva {
             filename,
             created_at,
             data,
-            proj: crate::Projector::new(),
+            proj: Projector::new(),
         })
     }
 
