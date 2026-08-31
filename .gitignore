@@ -1,2 +1,3 @@
 target/
 postcode-fst/postcodes.fst
+Cargo.lock
