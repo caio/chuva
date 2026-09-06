@@ -1,0 +1,6 @@
+postcode - NL postcodes and their approximate coordinates
+
+REGEN FST
+
+   # data at https://github.com/caio/netherlands-postcode-geojson
+   cargo run --release --features regen --example regen /path/to/netherlands-postcode-geojson/pc6

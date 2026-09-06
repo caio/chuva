@@ -1,0 +1,15 @@
+[package]
+name = "postcode"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+regen = ["dep:tinyjson"]
+
+[dependencies]
+fst = { version = "0.4.7", default-features = false }
+tinyjson = { version = "2.5.1", default-features = false, optional = true }
+
+[[example]]
+name = "regen"
+required-features = ["regen"]
