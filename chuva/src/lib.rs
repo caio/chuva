@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 
 use jiff::Timestamp;
 
+mod model;
+
 pub const HEIGHT: usize = 765;
 pub const WIDTH: usize = 700;
 pub const STEPS: usize = 25;
