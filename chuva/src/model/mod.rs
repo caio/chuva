@@ -3,7 +3,10 @@ use crate::Prediction;
 mod floats;
 use floats::FloatRange;
 
-enum Kind {
+mod ensemble;
+
+#[derive(Clone, Copy, Debug)]
+pub enum Kind {
     Nowcast,
     Ensemble,
 }
@@ -11,13 +14,11 @@ enum Kind {
 trait Model {
     fn predict(&self, point: NLGeoPoint) -> Option<Prediction<'_>>;
     // fn timestamp(&self) -> jiff::Timestamp;
-    // fn filename(&self) -> &str;
-    // fn kind(&self) -> Kind;
+    fn filename(&self) -> &str;
+    fn kind(&self) -> Kind;
 }
 
 struct Nowcast;
-
-struct Ensemble;
 
 pub struct NLGeoPoint(f64, f64);
 
