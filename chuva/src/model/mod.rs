@@ -4,6 +4,10 @@ mod floats;
 use floats::FloatRange;
 
 mod ensemble;
+mod nowcast;
+
+pub use ensemble::Ensemble;
+pub use nowcast::Nowcast;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Kind {
@@ -17,8 +21,6 @@ trait Model {
     fn filename(&self) -> &str;
     fn kind(&self) -> Kind;
 }
-
-struct Nowcast;
 
 pub struct NLGeoPoint(f64, f64);
 

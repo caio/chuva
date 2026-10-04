@@ -13,7 +13,7 @@ pub type Dataset = Box<[f32; STEPS * HEIGHT * WIDTH]>;
 
 pub type Prediction<'a> = &'a [f32; STEPS];
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Sync + Send>>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Sync + Send>>;
 
 pub struct Projector {
     knmi: proj4rs::Proj,
