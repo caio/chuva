@@ -9,6 +9,7 @@ regen = ["dep:tinyjson"]
 [dependencies]
 chuva = { version = "0.1.0", default-features = false, path = "../chuva" }
 caveman = { version = "0.1.0", default-features = false, path = "../caveman" }
+postcode = { version = "0.1.0", default-features = false, path = "../postcode" }
 
 jiff = { workspace = true }
 
