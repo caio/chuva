@@ -34,24 +34,20 @@ impl Moros {
         self.chuva.by_lat_lon(lat, lon)
     }
 
-    pub fn by_offset(&self, offset: usize) -> Option<Prediction<'_>> {
-        self.chuva.by_offset(offset)
-    }
-
     pub fn created_at(&self) -> Timestamp {
-        self.chuva.created_at
+        self.chuva.created_at()
     }
 
     pub fn filename(&self) -> &str {
-        &self.chuva.filename
+        self.chuva.filename()
     }
 
     pub fn kind(&self) -> ModelKind {
-        self.chuva.kind
+        self.chuva.kind()
     }
 
     pub fn get_time_slot(&self, now: Timestamp) -> Result<usize> {
-        get_time_slot(self.chuva.created_at, now).map_err(|_| "Dataset too old".into())
+        get_time_slot(self.chuva.created_at(), now).map_err(|_| "Dataset too old".into())
     }
 }
 
