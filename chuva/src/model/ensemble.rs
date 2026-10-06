@@ -1,8 +1,10 @@
-use super::{FloatRange, Kind, Model, NLGeoPoint, Prediction, floats::LinearScaler};
+use super::{FloatRange, Model, NLGeoPoint, Prediction, floats::LinearScaler};
+use crate::{ModelKind, Result, STEPS};
 
 pub struct Ensemble {
     name: String,
     data: Box<[f32; STEPS * HEIGHT * WIDTH]>,
+    created_at: jiff::Timestamp,
 }
 
 impl Model for Ensemble {
@@ -17,16 +19,17 @@ impl Model for Ensemble {
         &self.name
     }
 
-    fn kind(&self) -> Kind {
-        Kind::Ensemble
+    fn kind(&self) -> ModelKind {
+        ModelKind::Ensemble
+    }
+
+    fn timestamp(&self) -> jiff::Timestamp {
+        self.created_at
     }
 }
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-
 const WIDTH: usize = 780;
 const HEIGHT: usize = 780;
-const STEPS: usize = 25;
 const MEMBERS: usize = 20;
 
 const LAT_MIN: f64 = 48.995;
@@ -104,12 +107,17 @@ impl Ensemble {
             .to_string_lossy()
             .into();
 
+        let created_at = ModelKind::Ensemble
+            .extract_ts(&name)
+            .ok_or("Unable to guess timestamp from filename")?;
+
         Ok(Self {
             name,
             data: data
                 .into_boxed_slice()
                 .try_into()
                 .expect("Dimensions are exact"),
+            created_at,
         })
     }
 }

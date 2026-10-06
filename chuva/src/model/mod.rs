@@ -1,25 +1,19 @@
-use crate::Prediction;
+use crate::{ModelKind, Prediction};
 
 mod floats;
 use floats::FloatRange;
 
-mod ensemble;
-mod nowcast;
+pub mod ensemble;
+pub mod nowcast;
 
 pub use ensemble::Ensemble;
 pub use nowcast::Nowcast;
 
-#[derive(Clone, Copy, Debug)]
-pub enum Kind {
-    Nowcast,
-    Ensemble,
-}
-
-trait Model {
+pub trait Model {
     fn predict(&self, point: NLGeoPoint) -> Option<Prediction<'_>>;
-    // fn timestamp(&self) -> jiff::Timestamp;
+    fn timestamp(&self) -> jiff::Timestamp;
     fn filename(&self) -> &str;
-    fn kind(&self) -> Kind;
+    fn kind(&self) -> ModelKind;
 }
 
 pub struct NLGeoPoint(f64, f64);

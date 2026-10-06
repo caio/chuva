@@ -1,5 +1,5 @@
-use super::{Kind, Model, NLGeoPoint, Prediction};
-use crate::Result;
+use super::{Model, NLGeoPoint, Prediction};
+use crate::{ModelKind, Result};
 
 const HEIGHT: usize = 765;
 const WIDTH: usize = 700;
@@ -10,6 +10,7 @@ pub struct Nowcast {
     proj: Projector,
     name: String,
     data: Box<[f32; STEPS * HEIGHT * WIDTH]>,
+    created_at: jiff::Timestamp,
 }
 
 impl Model for Nowcast {
@@ -21,8 +22,12 @@ impl Model for Nowcast {
         &self.name
     }
 
-    fn kind(&self) -> Kind {
-        Kind::Nowcast
+    fn kind(&self) -> ModelKind {
+        ModelKind::Nowcast
+    }
+
+    fn timestamp(&self) -> jiff::Timestamp {
+        self.created_at
     }
 }
 
@@ -88,12 +93,24 @@ impl Nowcast {
             .expect("netcdf::open worked, this is obviously a file")
             .to_string_lossy()
             .into();
+
+        let created_at = ModelKind::Nowcast
+            .extract_ts(&name)
+            .ok_or("Unable to guess timestamp from filename")?;
+
         let data = data
             .into_boxed_slice()
             .try_into()
             .expect("Dimensions are exact");
+
         let proj = Projector::new();
-        Ok(Self { data, proj, name })
+
+        Ok(Self {
+            data,
+            proj,
+            name,
+            created_at,
+        })
     }
 
     pub fn by_lat_lon(&self, lat: f64, lon: f64) -> Option<Prediction<'_>> {
