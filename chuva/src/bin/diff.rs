@@ -1,3 +1,5 @@
+use postcode::Postcodes;
+
 #[derive(Debug, Default)]
 struct Stats {
     same: usize,
@@ -23,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Loading {b}");
     let b = chuva::Chuva::load(b)?;
 
-    let delta = (a.created_at - b.created_at)
+    let delta = (a.created_at() - b.created_at())
         .total(jiff::Unit::Minute)
         .unwrap();
     assert_eq!(0, (delta as isize) % 5);
@@ -34,10 +36,16 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         println!("b is newer than a ({step})")
     }
 
+    let postcodes = Postcodes::new();
     let mut stats = Stats::default();
-    for offset in (0..chuva::MAX_OFFSET).step_by(chuva::STEPS) {
-        let a = a.by_offset(offset).unwrap();
-        let b = b.by_offset(offset).unwrap();
+
+    postcodes.for_each_entry(|postcode, (lat, lon)| -> bool {
+        let a = a
+            .by_lat_lon(lat, lon)
+            .unwrap_or_else(|| panic!("Model a failed to get predictions for {postcode}"));
+        let b = b
+            .by_lat_lon(lat, lon)
+            .unwrap_or_else(|| panic!("Model b failed to get predictions for {postcode}"));
 
         let (a, b) = adjust(a, b, step);
         assert_eq!(a.len(), b.len());
@@ -48,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             if a.iter().sum::<f32>() != 0f32 {
                 stats.same_non_zero += 1;
             }
-            continue;
+            return true;
         }
 
         stats.diff += 1;
@@ -57,8 +65,10 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         let a_line = a.iter().map(|&v| spark(v)).collect::<String>();
         let b_line = b.iter().map(|&v| spark(v)).collect::<String>();
-        eprintln!("a/{a_line}\nb/{b_line}\n")
-    }
+        eprintln!("{postcode}:\na/{a_line}\nb/{b_line}\n");
+
+        true
+    });
 
     stats.diff_each_score /= stats.diff as f32;
     stats.diff_score /= stats.diff as f32;

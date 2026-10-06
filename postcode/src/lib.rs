@@ -42,6 +42,17 @@ impl Postcodes {
         }
     }
 
+    pub fn for_each_entry<F: FnMut(&str, (f64, f64)) -> bool>(&self, mut func: F) {
+        let mut stream = self.0.stream();
+        while let Some((key, value)) = stream.next() {
+            let key = str::from_utf8(key).expect("keys are valid utf-8");
+            let (lat, lon) = LossyNLCoordPacker::unpack(value);
+            if !func(key, (lat, lon)) {
+                break;
+            }
+        }
+    }
+
     // Either a callback thinger or a plain Vec if I ever do
     // autocomplete
 }

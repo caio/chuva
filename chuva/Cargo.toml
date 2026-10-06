@@ -3,14 +3,12 @@ name = "chuva"
 version = "0.1.0"
 edition = "2024"
 
-[features]
-debug = ["dep:ndarray", "netcdf/ndarray"]
-
 [dependencies]
 jiff = { workspace = true }
 proj4rs = { version = "0.1.9", default-features = false }
 netcdf = { version = "0.11.1", default-features = false, features = ["static"] }
-ndarray = { version = "0.17.1", optional = true }
+postcode = { version = "0.1.0", default-features = false, path = "../postcode", optional = true }
 
 [[bin]]
 name = "diff"
+required-features = ["postcode"]
