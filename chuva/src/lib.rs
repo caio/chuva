@@ -131,11 +131,6 @@ impl ModelKind {
         Some((created_at, kind))
     }
 
-    pub fn load_from_dir<P: AsRef<Path>>(&self, dir: P) -> Result<Chuva> {
-        let file = most_recent_data_file(dir, Some(*self))?;
-        Chuva::load(file)
-    }
-
     fn load_model<P: AsRef<Path>>(&self, file: P) -> Result<Box<dyn Model + Send + Sync>> {
         Ok(match self {
             ModelKind::Nowcast => Box::new(Nowcast::new(file)?),
