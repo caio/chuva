@@ -126,7 +126,7 @@ impl ModelKind {
     fn guess_with_timestamp<P: AsRef<Path>>(file: P) -> Option<(Timestamp, ModelKind)> {
         let kind = Self::guess(file.as_ref())?;
         // FIXME not portable eh
-        let name = file.as_ref().to_str().unwrap_or("");
+        let name = file.as_ref().file_name()?.to_str().unwrap_or("");
         let created_at = kind.extract_ts(name)?;
         Some((created_at, kind))
     }
