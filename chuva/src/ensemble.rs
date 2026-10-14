@@ -1,5 +1,6 @@
-use super::{FloatRange, Model, NLGeoPoint, Prediction, floats::LinearScaler};
-use crate::{ModelKind, Result, STEPS};
+use super::{
+    FloatRange, Model, ModelKind, NLGeoPoint, Prediction, Result, STEPS, floats::LinearScaler,
+};
 
 pub struct Ensemble {
     name: String,
@@ -9,10 +10,7 @@ pub struct Ensemble {
 
 impl Model for Ensemble {
     fn predict(&self, point: NLGeoPoint) -> Option<Prediction<'_>> {
-        // XXX conversion to model projection skipped. fixmemaybe
-        let (x, y) = latlon_to_xy(point.latitude(), point.longitude())?;
-        let offset = (x * WIDTH + y) * STEPS;
-        self.data[offset..(offset + STEPS)].try_into().ok()
+        self.by_lat_lon(point.latitude(), point.longitude())
     }
 
     fn filename(&self) -> &str {
@@ -60,6 +58,13 @@ const fn latlon_to_xy(lat: f64, lon: f64) -> Option<(usize, usize)> {
 }
 
 impl Ensemble {
+    pub fn by_lat_lon(&self, lat: f64, lon: f64) -> Option<Prediction<'_>> {
+        // XXX conversion to model projection skipped. fixmemaybe
+        let (x, y) = latlon_to_xy(lat, lon)?;
+        let offset = (x * WIDTH + y) * STEPS;
+        self.data[offset..(offset + STEPS)].try_into().ok()
+    }
+
     pub fn new<P: AsRef<std::path::Path>>(model: P) -> Result<Ensemble> {
         let file = netcdf::open(model.as_ref())?;
 

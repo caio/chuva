@@ -1,9 +1,21 @@
+use jiff::Timestamp;
 use std::path::{Path, PathBuf};
 
-use jiff::Timestamp;
+mod ensemble;
+mod floats;
+mod nowcast;
 
-mod model;
-use model::{Ensemble, Model, NLGeoPoint, Nowcast};
+pub use ensemble::Ensemble;
+pub use nowcast::Nowcast;
+
+use floats::FloatRange;
+
+pub trait Model {
+    fn predict(&self, point: NLGeoPoint) -> Option<Prediction<'_>>;
+    fn timestamp(&self) -> jiff::Timestamp;
+    fn filename(&self) -> &str;
+    fn kind(&self) -> ModelKind;
+}
 
 pub const STEPS: usize = 25;
 pub type Prediction<'a> = &'a [f32; STEPS];
@@ -155,4 +167,30 @@ fn most_recent_data_file<P: AsRef<Path>>(
         .max()
         .map(|(_ts, _kind, file)| file)
         .ok_or(std::io::Error::other("No data file found in given path"))
+}
+
+pub struct NLGeoPoint {
+    lat: f64,
+    lon: f64,
+}
+
+impl NLGeoPoint {
+    const LAT: FloatRange = FloatRange::new(48.895301818847656, 55.973602294921875);
+    const LON: FloatRange = FloatRange::new(0.0, 10.856452941894531);
+
+    pub const fn new(lat: f64, lon: f64) -> Option<Self> {
+        if Self::LAT.contains(lat) && Self::LON.contains(lon) {
+            Some(Self { lat, lon })
+        } else {
+            None
+        }
+    }
+
+    pub const fn latitude(&self) -> f64 {
+        self.lat
+    }
+
+    pub const fn longitude(&self) -> f64 {
+        self.lon
+    }
 }

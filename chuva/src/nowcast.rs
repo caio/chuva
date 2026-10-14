@@ -1,5 +1,4 @@
-use super::{Model, NLGeoPoint, Prediction};
-use crate::{ModelKind, Result};
+use super::{Model, ModelKind, NLGeoPoint, Prediction, Result};
 
 const HEIGHT: usize = 765;
 const WIDTH: usize = 700;
