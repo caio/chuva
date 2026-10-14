@@ -3,12 +3,10 @@ name = "moros"
 version = "0.1.0"
 edition = "2024"
 
-[features]
-regen = ["dep:tinyjson"]
-
 [dependencies]
 chuva = { version = "0.1.0", default-features = false, path = "../chuva" }
 caveman = { version = "0.1.0", default-features = false, path = "../caveman" }
+postcode = { version = "0.1.0", default-features = false, path = "../postcode" }
 
 jiff = { workspace = true }
 
@@ -16,9 +14,3 @@ fst = { version = "0.4.7", default-features = false }
 askama = { version = "0.14.0", default-features = false, features = ["blocks", "derive", "std"] }
 tokio = { version = "1.47.1", default-features = false, features = ["net", "rt"] }
 listenfd = { version = "1.0.2", default-features = false }
-
-tinyjson = { version = "2.5.1", default-features = false, optional = true }
-
-[[example]]
-name = "postcode_fst"
-required-features = ["regen"]

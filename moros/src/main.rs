@@ -258,11 +258,7 @@ fn main() -> Result<()> {
             let lon: f64 = args.next().unwrap().parse()?;
             moros.by_lat_lon(lat, lon)
         } else {
-            moros.by_postcode(&code).or_else(|| {
-                code.parse::<usize>()
-                    .ok()
-                    .and_then(|offset| moros.by_offset(offset))
-            })
+            moros.by_postcode(&code)
         }
     } else {
         moros.by_lat_lon(52.325, 4.873)

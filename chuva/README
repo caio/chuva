@@ -1,0 +1,11 @@
+chuva - API to access KNMI's rain forecast models
+
+Models are laid out in RAM so that the performance of answering
+"what's the rain forecast for the next 2h for a given lat,lon point"
+can be measured in nanoseconds instead of seconds
+
+SUPPORTED MODELS
+
+   Nowcast (radar-forecast, version 2.0): https://dataplatform.knmi.nl/dataset/radar-forecast-2-0
+
+   Ensemble (seamless_precipitation_ensemble_forecast_members, version 1.0): https://dataplatform.knmi.nl/dataset/seamless-precipitation-ensemble-forecast-members-1-0

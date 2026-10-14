@@ -48,6 +48,8 @@ In alphabetical order:
 - `etc/systemd`: A skeleton of the systemd unit files that drive the service
 - `moros`: The web server, front-end for chuva.caio.co. Designed to be
   killed/restarted periodically to pick up the most recent data
+- `postcode`: A little crate that embeds every dutch postcode and
+  coordinates to an arbitrary geo point within its boundaries
 
 ## License
 
